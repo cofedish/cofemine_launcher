@@ -61,6 +61,7 @@ import org.jackhuang.hmcl.ui.animation.TransitionPane;
 import org.jackhuang.hmcl.ui.construct.MessageDialogPane;
 import org.jackhuang.hmcl.ui.construct.PopupMenu;
 import org.jackhuang.hmcl.ui.construct.TwoLineListItem;
+import org.jackhuang.hmcl.ui.cofemine.CofeMinePane;
 import org.jackhuang.hmcl.ui.decorator.DecoratorPage;
 import org.jackhuang.hmcl.ui.versions.GameItem;
 import org.jackhuang.hmcl.ui.versions.Versions;
@@ -271,7 +272,12 @@ public final class MainPage extends StackPane implements DecoratorPage {
             launchPane.getChildren().setAll(launchButton, menuButton);
         }
 
-        getChildren().addAll(updatePane, launchPane);
+        CofeMinePane cofeminePane = new CofeMinePane();
+        FXUtils.setLimitWidth(cofeminePane, 320);
+        StackPane.setAlignment(cofeminePane, Pos.TOP_LEFT);
+        StackPane.setMargin(cofeminePane, new Insets(12, 0, 0, 0));
+
+        getChildren().addAll(cofeminePane, updatePane, launchPane);
 
         menu.setMaxHeight(365);
         menu.setMaxWidth(545);

@@ -468,6 +468,61 @@
 
 /*******************************************************************************
  *                                                                             *
+ * CofeMine Panel                                                             *
+ *                                                                             *
+ ******************************************************************************/
+
+.cofemine-panel {
+    -fx-background-color: -monet-surface-container-low-transparent-80;
+    -fx-background-radius: 8;
+    -fx-padding: 14;
+    -fx-spacing: 10;
+}
+
+.cofemine-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -monet-on-surface;
+}
+
+.cofemine-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -monet-on-surface-variant;
+}
+
+.cofemine-status-line {
+    -fx-spacing: 8;
+    -fx-alignment: center-left;
+}
+
+.cofemine-status-dot {
+    -fx-fill: -monet-error;
+}
+
+.cofemine-status-dot.online {
+    -fx-fill: -monet-primary;
+}
+
+.cofemine-action-button {
+    -fx-background-color: -monet-primary-container;
+    -fx-text-fill: -monet-on-primary-container;
+}
+
+.cofemine-action-button .svg {
+    -fx-fill: -monet-on-primary-container;
+}
+
+.cofemine-secondary-button {
+    -fx-background-color: -monet-surface-container;
+    -fx-text-fill: -monet-on-surface;
+}
+
+.cofemine-link {
+    -fx-text-fill: -monet-primary;
+}
+
+/*******************************************************************************
+ *                                                                             *
  * JFX Tab Pane                                                                *
  *                                                                             *
  ******************************************************************************/
