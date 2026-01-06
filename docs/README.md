@@ -1,70 +1,58 @@
-# Hello Minecraft! Launcher
+# CofeMine Launcher
 
-<!-- #BEGIN BLOCK -->
-<!-- #PROPERTY NAME=BADGES -->
-[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://cnb.cool/HMCL-dev/HMCL)
-[![Downloads](https://img.shields.io/github/downloads/HMCL-dev/HMCL/total?label=Downloads&style=flat)](https://github.com/HMCL-dev/HMCL/releases)
-![Stars](https://img.shields.io/github/stars/HMCL-dev/HMCL?style=flat)
-[![Discord](https://img.shields.io/discord/995291757799538688.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/jVvC7HfM6U)
-[![QQ Group](https://img.shields.io/badge/QQ-HMCL-bright?label=&logo=qq&logoColor=ffffff&color=1EBAFC&labelColor=1DB0EF&logoSize=auto)](https://docs.hmcl.net/groups.html)
-<!-- #END BLOCK -->
+[![Release](https://img.shields.io/github/v/release/cofedish/cofemine_launcher?style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+[![Downloads](https://img.shields.io/github/downloads/cofedish/cofemine_launcher/total?label=Downloads&style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+![Stars](https://img.shields.io/github/stars/cofedish/cofemine_launcher?style=flat)
 
-<!-- #BEGIN LANGUAGE_SWITCHER -->
-**English** (**Standard**, [uʍoᗡ ǝpᴉsd∩](README_en_Qabs.md)) | 中文 ([简体](README_zh.md), [繁體](README_zh_Hant.md), [文言](README_lzh.md)) | [日本語](README_ja.md) | [español](README_es.md) | [русский](README_ru.md) | [українська](README_uk.md)
-<!-- #END LANGUAGE_SWITCHER -->
+## О проекте
 
-## Introduction
+CofeMine Launcher — кастомный UI и набор фичей для сервера CofeMine, основанный на HMCL. Все ключевые возможности HMCL сохранены, добавлены брендирование и удобные функции для CofeMine.
 
-HMCL is an open-source, cross-platform Minecraft launcher that supports Mod Management, Game Customizing, ModLoader Installing (Forge, NeoForge, Cleanroom, Fabric, Quilt, LiteLoader, and OptiFine), Modpack Creating, UI Customization, and more.
+Основные возможности:
+- запуск Minecraft с поддержкой модлоадеров (Forge, NeoForge, Fabric, Quilt, LiteLoader, OptiFine)
+- управление версиями, профилями и модпаками
+- кофейная светлая тема и панель CofeMine (статус сервера, сайт, установка/обновление модпака)
 
-HMCL has amazing cross-platform capabilities. Not only does it run on different operating systems like Windows, Linux, macOS, and FreeBSD, but it also supports various CPU architectures such as x86, ARM, RISC-V, MIPS, and LoongArch. You can easily enjoy Minecraft across different platforms through HMCL.
+## Скачивание
 
-For systems and CPU architectures supported by HMCL, please refer to [this table](PLATFORM.md).
+- Релизы: https://github.com/cofedish/cofemine_launcher/releases
+- Сайт: https://cofemine.ru
 
-## Download
+## Лицензия
 
-Download the latest version from the [official website](https://hmcl.huangyuhui.net/download).
+Проект распространяется под GPLv3 с дополнительными условиями HMCL (см. `../LICENSE`).
 
-You can also find the latest version of HMCL in [GitHub Releases](https://github.com/HMCL-dev/HMCL/releases).
+Важные требования GPLv3 Section 7 (унаследовано от HMCL):
+1. При распространении модифицированной версии нужно разумно изменить имя или номер версии, чтобы отличать её от оригинала.
+2. Нельзя удалять отображаемые в приложении копирайты.
 
-Although not necessary, it is recommended only to download releases from the official websites listed above.
+Имя и версия изменяются в `../HMCL/src/main/java/org/jackhuang/hmcl/Metadata.java`.
 
-## License
+## Сборка
 
-The software is distributed under [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) license with the following additional terms:
+Требования: Java 17+.
 
-### Additional terms under GPLv3 Section 7
+Команды:
+```bash
+./gradlew build
+./gradlew :HMCL:run
+```
 
-1. When you distribute a modified version of the software, you must change the software name or the version number in a reasonable way in order to distinguish it from the original version. (Under [GPLv3, 7(c)](https://github.com/HMCL-dev/HMCL/blob/11820e31a85d8989e41d97476712b07e7094b190/LICENSE#L372-L374))
+## JVM параметры (для отладки)
 
-   The software name and the version number can be edited [here](https://github.com/HMCL-dev/HMCL/blob/javafx/HMCL/src/main/java/org/jackhuang/hmcl/Metadata.java#L33-L35).
+Префикс параметров сохранён как `hmcl.*` для совместимости с базой HMCL.
 
-2. You must not remove the copyright declaration displayed in the software. (Under [GPLv3, 7(b)](https://github.com/HMCL-dev/HMCL/blob/11820e31a85d8989e41d97476712b07e7094b190/LICENSE#L368-L370))
-
-## Contribution
-
-If you want to submit a pull request, here are some requirements:
-
-* IDE: IntelliJ IDEA
-* Compiler: Java 17+
-
-### Compilation
-
-See the [Build Guide](./Building.md) page.
-
-## JVM Options (for debugging)
-
-| Parameter                                    | Description                                                                                   |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `-Dhmcl.home=<path>`                         | Override HMCL directory                                                                       |
-| `-Dhmcl.self_integrity_check.disable=true`   | Bypass the self integrity check when checking for updates                                     |
-| `-Dhmcl.bmclapi.override=<url>`              | Override API Root of BMCLAPI download provider. Defaults to `https://bmclapi2.bangbang93.com` |
-| `-Dhmcl.font.override=<font family>`         | Override font family                                                                          |
-| `-Dhmcl.version.override=<version>`          | Override the version number                                                                   |
-| `-Dhmcl.update_source.override=<url>`        | Override the update source for HMCL itself                                                    |
-| `-Dhmcl.authlibinjector.location=<path>`     | Use the specified authlib-injector (instead of downloading one)                               |
-| `-Dhmcl.openjfx.repo=<maven repository url>` | Add custom Maven repository for downloading OpenJFX                                           |
-| `-Dhmcl.native.encoding=<encoding>`          | Override the native encoding                                                                  |
-| `-Dhmcl.microsoft.auth.id=<App ID>`          | Override Microsoft OAuth App ID                                                               |
-| `-Dhmcl.microsoft.auth.secret=<App Secret>`  | Override Microsoft OAuth App Secret                                                           |
-| `-Dhmcl.curseforge.apikey=<Api Key>`         | Override CurseForge API Key                                                                   |
+| Параметр | Описание |
+| --- | --- |
+| `-Dhmcl.home=<path>` | Переопределить директорию данных лаунчера |
+| `-Dhmcl.self_integrity_check.disable=true` | Отключить проверку целостности при обновлении |
+| `-Dhmcl.bmclapi.override=<url>` | Задать альтернативный API BMCLAPI |
+| `-Dhmcl.font.override=<font family>` | Переопределить шрифт |
+| `-Dhmcl.version.override=<version>` | Переопределить версию |
+| `-Dhmcl.update_source.override=<url>` | Переопределить источник обновлений |
+| `-Dhmcl.authlibinjector.location=<path>` | Указать локальный authlib-injector |
+| `-Dhmcl.openjfx.repo=<maven repository url>` | Доп. репозиторий Maven для OpenJFX |
+| `-Dhmcl.native.encoding=<encoding>` | Переопределить нативную кодировку |
+| `-Dhmcl.microsoft.auth.id=<App ID>` | Microsoft OAuth App ID |
+| `-Dhmcl.microsoft.auth.secret=<App Secret>` | Microsoft OAuth App Secret |
+| `-Dhmcl.curseforge.apikey=<Api Key>` | CurseForge API Key |

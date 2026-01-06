@@ -1,62 +1,58 @@
-# Hello Minecraft! Launcher
+# CofeMine Launcher
 
-<!-- #BEGIN COPY -->
-<!-- #PROPERTY NAME=BADGES -->
-[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://cnb.cool/HMCL-dev/HMCL)
-[![Downloads](https://img.shields.io/github/downloads/HMCL-dev/HMCL/total?label=Downloads&style=flat)](https://github.com/HMCL-dev/HMCL/releases)
-![Stars](https://img.shields.io/github/stars/HMCL-dev/HMCL?style=flat)
-[![Discord](https://img.shields.io/discord/995291757799538688.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/jVvC7HfM6U)
-[![QQ Group](https://img.shields.io/badge/QQ-HMCL-bright?label=&logo=qq&logoColor=ffffff&color=1EBAFC&labelColor=1DB0EF&logoSize=auto)](https://docs.hmcl.net/groups.html)
-<!-- #END COPY -->
+[![Release](https://img.shields.io/github/v/release/cofedish/cofemine_launcher?style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+[![Downloads](https://img.shields.io/github/downloads/cofedish/cofemine_launcher/total?label=Downloads&style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+![Stars](https://img.shields.io/github/stars/cofedish/cofemine_launcher?style=flat)
 
-<!-- #BEGIN LANGUAGE_SWITCHER -->
-English ([Standard](README.md), [uʍoᗡ ǝpᴉsd∩](README_en_Qabs.md)) | 中文 ([简体](README_zh.md), [繁體](README_zh_Hant.md), [文言](README_lzh.md)) | [日本語](README_ja.md) | [español](README_es.md) | **русский** | [українська](README_uk.md)
-<!-- #END LANGUAGE_SWITCHER -->
+## О проекте
 
-## Введение
+CofeMine Launcher — кастомный UI и набор фичей для сервера CofeMine, основанный на HMCL. Все ключевые возможности HMCL сохранены, добавлены брендирование и удобные функции для CofeMine.
 
-HMCL — это открытый, кроссплатформенный лаунчер для Minecraft с поддержкой управления модами, настройки игры, установки загрузчиков модов (Forge, NeoForge, Cleanroom, Fabric, Quilt, LiteLoader и OptiFine), создания модпаков, настройки интерфейса и многого другого.
+Основные возможности:
+- запуск Minecraft с поддержкой модлоадеров (Forge, NeoForge, Fabric, Quilt, LiteLoader, OptiFine)
+- управление версиями, профилями и модпаками
+- кофейная светлая тема и панель CofeMine (статус сервера, сайт, установка/обновление модпака)
 
-HMCL обладает отличной кроссплатформенностью. Он работает не только на различных операционных системах, таких как Windows, Linux, macOS и FreeBSD, но и поддерживает различные архитектуры процессоров: x86, ARM, RISC-V, MIPS и LoongArch. Благодаря HMCL вы можете легко наслаждаться Minecraft на разных платформах.
+## Скачивание
 
-Список поддерживаемых систем и архитектур процессоров HMCL смотрите в [этой таблице](PLATFORM.md).
-
-## Загрузка
-
-Скачайте последнюю версию с [официального сайта](https://hmcl.huangyuhui.net/download).
-
-Также вы можете найти последнюю версию HMCL в [релизах на GitHub](https://github.com/HMCL-dev/HMCL/releases).
-
-Хотя это не обязательно, рекомендуется скачивать релизы только с указанных выше официальных сайтов.
+- Релизы: https://github.com/cofedish/cofemine_launcher/releases
+- Сайт: https://cofemine.ru
 
 ## Лицензия
 
-См. [README.md](README.md#license).
+Проект распространяется под GPLv3 с дополнительными условиями HMCL (см. `../LICENSE`).
 
-## Вклад
+Важные требования GPLv3 Section 7 (унаследовано от HMCL):
+1. При распространении модифицированной версии нужно разумно изменить имя или номер версии, чтобы отличать её от оригинала.
+2. Нельзя удалять отображаемые в приложении копирайты.
 
-Если вы хотите отправить pull request, ознакомьтесь с требованиями:
+Имя и версия изменяются в `../HMCL/src/main/java/org/jackhuang/hmcl/Metadata.java`.
 
-* IDE: IntelliJ IDEA
-* Компилятор: Java 17+
+## Сборка
 
-### Сборка
+Требования: Java 17+.
 
-См. страницу [Руководство по сборке](./Building.md).
+Команды:
+```bash
+./gradlew build
+./gradlew :HMCL:run
+```
 
-## Параметры JVM (для отладки)
+## JVM параметры (для отладки)
 
-| Параметр                                      | Описание                                                                                                      |
-|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `-Dhmcl.home=<путь>`                          | Переопределить директорию HMCL                                                                                |
-| `-Dhmcl.self_integrity_check.disable=true`    | Отключить проверку целостности при проверке обновлений                                                        |
-| `-Dhmcl.bmclapi.override=<url>`               | Переопределить корневой API-адрес провайдера загрузки BMCLAPI. По умолчанию `https://bmclapi2.bangbang93.com` |
-| `-Dhmcl.font.override=<название шрифта>`      | Переопределить семейство шрифтов                                                                              |
-| `-Dhmcl.version.override=<версия>`            | Переопределить номер версии                                                                                   |
-| `-Dhmcl.update_source.override=<url>`         | Переопределить источник обновлений для самого HMCL                                                            |
-| `-Dhmcl.authlibinjector.location=<путь>`      | Использовать указанный authlib-injector (вместо загрузки)                                                     |
-| `-Dhmcl.openjfx.repo=<url репозитория maven>` | Добавить пользовательский Maven-репозиторий для загрузки OpenJFX                                              |
-| `-Dhmcl.native.encoding=<кодировка>`          | Переопределить нативную кодировку                                                                             |
-| `-Dhmcl.microsoft.auth.id=<App ID>`           | Переопределить Microsoft OAuth App ID                                                                         |
-| `-Dhmcl.microsoft.auth.secret=<App Secret>`   | Переопределить Microsoft OAuth App Secret                                                                     |
-| `-Dhmcl.curseforge.apikey=<Api Key>`          | Переопределить CurseForge API Key                                                                             |
+Префикс параметров сохранён как `hmcl.*` для совместимости с базой HMCL.
+
+| Параметр | Описание |
+| --- | --- |
+| `-Dhmcl.home=<path>` | Переопределить директорию данных лаунчера |
+| `-Dhmcl.self_integrity_check.disable=true` | Отключить проверку целостности при обновлении |
+| `-Dhmcl.bmclapi.override=<url>` | Задать альтернативный API BMCLAPI |
+| `-Dhmcl.font.override=<font family>` | Переопределить шрифт |
+| `-Dhmcl.version.override=<version>` | Переопределить версию |
+| `-Dhmcl.update_source.override=<url>` | Переопределить источник обновлений |
+| `-Dhmcl.authlibinjector.location=<path>` | Указать локальный authlib-injector |
+| `-Dhmcl.openjfx.repo=<maven repository url>` | Доп. репозиторий Maven для OpenJFX |
+| `-Dhmcl.native.encoding=<encoding>` | Переопределить нативную кодировку |
+| `-Dhmcl.microsoft.auth.id=<App ID>` | Microsoft OAuth App ID |
+| `-Dhmcl.microsoft.auth.secret=<App Secret>` | Microsoft OAuth App Secret |
+| `-Dhmcl.curseforge.apikey=<Api Key>` | CurseForge API Key |
