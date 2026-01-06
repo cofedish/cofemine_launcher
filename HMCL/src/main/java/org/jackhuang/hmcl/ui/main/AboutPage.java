@@ -47,9 +47,9 @@ public final class AboutPage extends StackPane {
         {
             IconedTwoLineListItem launcher = new IconedTwoLineListItem();
             launcher.setImage(FXUtils.newBuiltinImage("/assets/img/icon.png"));
-            launcher.setTitle("Hello Minecraft! Launcher");
-            launcher.setSubtitle(Metadata.VERSION);
-            launcher.setExternalLink(Metadata.PUBLISH_URL);
+            launcher.setTitle(Metadata.FULL_NAME);
+            launcher.setSubtitle(Metadata.VERSION + "\n" + i18n("about.cofemine.statement"));
+            launcher.setExternalLink("https://cofemine.ru");
 
             IconedTwoLineListItem author = new IconedTwoLineListItem();
             author.setImage(FXUtils.newBuiltinImage("/assets/img/yellow_fish.png"));

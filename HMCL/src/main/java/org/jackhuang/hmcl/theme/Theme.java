@@ -24,7 +24,7 @@ import java.util.*;
 /// @author Glavo
 public final class Theme {
 
-    public static final Theme DEFAULT = new Theme(ThemeColor.DEFAULT, Brightness.DEFAULT, ColorStyle.FIDELITY, Contrast.DEFAULT);
+    public static final Theme DEFAULT = new Theme(ThemeColor.DEFAULT, Brightness.LIGHT, ColorStyle.FIDELITY, Contrast.DEFAULT);
 
     private final ThemeColor primaryColorSeed;
     private final Brightness brightness;

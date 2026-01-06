@@ -34,6 +34,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontSmoothingType;
+import org.jackhuang.hmcl.Metadata;
 import org.jackhuang.hmcl.setting.EnumBackgroundImage;
 import org.jackhuang.hmcl.setting.FontManager;
 import org.jackhuang.hmcl.theme.ThemeColor;
@@ -295,7 +296,7 @@ public class PersonalizationPage extends StackPane {
                     }
                 }
 
-                vbox.getChildren().add(new Label("Hello Minecraft! Launcher"));
+                vbox.getChildren().add(new Label(Metadata.FULL_NAME));
 
                 fontPane.getContent().add(vbox);
             }

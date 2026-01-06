@@ -41,11 +41,14 @@ import java.util.Objects;
 @JsonSerializable
 public record ThemeColor(@NotNull String name, @NotNull Color color) {
 
-    public static final ThemeColor DEFAULT = new ThemeColor("blue", Color.web("#5C6BC0"));
+    public static final ThemeColor DEFAULT = new ThemeColor("coffee", Color.web("#7B4A2A"));
+    public static final ThemeColor BLUE = new ThemeColor("blue", Color.web("#5C6BC0"));
+    public static final ThemeColor DARKER_BLUE = new ThemeColor("darker_blue", Color.web("#283593"));
 
     public static final List<ThemeColor> STANDARD_COLORS = List.of(
             DEFAULT,
-            new ThemeColor("darker_blue", Color.web("#283593")),
+            BLUE,
+            DARKER_BLUE,
             new ThemeColor("green", Color.web("#43A047")),
             new ThemeColor("orange", Color.web("#E67E22")),
             new ThemeColor("purple", Color.web("#9C27B0")),
