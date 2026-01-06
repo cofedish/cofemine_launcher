@@ -1,6 +1,6 @@
 name: Bug 反馈 | Bug Report
 description: 
-  反馈一个 HMCL 错误。| File a bug report for HMCL.
+  反馈一个 CofeMine Launcher 错误。| File a bug report for CofeMine Launcher.
 title: "[Bug] "
 labels: bug
 body:
@@ -9,17 +9,17 @@ body:
       value: |
         提交前请确认：
 
-        * 该问题确实是 **HMCL 的错误**，而**不是 Minecraft 非正常退出**，如果你的 Minecraft 非正常退出，请前往 [QQ 群](https://docs.hmcl.net/groups.html)/[Discord 服务器](https://discord.gg/jVvC7HfM6U) 获取帮助。
-        * 你的启动器版本是**最新的预览版本**，可以点击 [此处](https://zkitefly.github.io/HMCL-Snapshot-Update/) 下载最新预览版本。
+        * 该问题确实是 **CofeMine Launcher 的错误**，而**不是 Minecraft 非正常退出**，如果你的 Minecraft 非正常退出，请前往 [Telegram 群](https://t.me/+rfvGU6sDSvEwZDgy)/[Discord 服务器](https://discord.gg/zyKM2XAnXW) 获取帮助。
+        * 你的启动器版本是**最新的预览版本**，可以点击 [此处](https://github.com/cofedish/cofemine_launcher/releases) 下载最新预览版本。
 
-        如果你的问题并不属于上述两类，你可以选取另一种 Issue 类型，或者直接前往 [QQ 群](https://docs.hmcl.net/groups.html)/[Discord 服务器](https://discord.gg/jVvC7HfM6U) 获取帮助。
+        如果你的问题并不属于上述两类，你可以选取另一种 Issue 类型，或者直接前往 [Telegram 群](https://t.me/+rfvGU6sDSvEwZDgy)/[Discord 服务器](https://discord.gg/zyKM2XAnXW) 获取帮助。
 
         Before submitting, please confirm:
 
-        * The issue is indeed **a bug of HMCL**, not **Minecraft abnormal exit**. If your Minecraft exits abnormally, please go to the [QQ group](https://docs.hmcl.net/groups.html) or [Discord server](https://discord.gg/jVvC7HfM6U) for help.
-        * Your launcher is the **latest nightly build**. You can click [here](https://zkitefly.github.io/HMCL-Snapshot-Update/en) to download the latest nightly build.
+        * The issue is indeed **a bug of CofeMine Launcher**, not **Minecraft abnormal exit**. If your Minecraft exits abnormally, please go to the [Telegram group](https://t.me/+rfvGU6sDSvEwZDgy) or [Discord server](https://discord.gg/zyKM2XAnXW) for help.
+        * Your launcher is the **latest nightly build**. You can click [here](https://github.com/cofedish/cofemine_launcher/releases) to download the latest nightly build.
 
-        If your issue does not fall into the above two categories, you can choose another type of issue or directly go to the [QQ group](https://docs.hmcl.net/groups.html) or [Discord server](https://discord.gg/jVvC7HfM6U) for help.
+        If your issue does not fall into the above two categories, you can choose another type of issue or directly go to the [Telegram group](https://t.me/+rfvGU6sDSvEwZDgy) or [Discord server](https://discord.gg/zyKM2XAnXW) for help.
   - type: textarea
     id: bug-report
     attributes:
@@ -28,7 +28,7 @@ body:
         请尽可能地详细描述你所遇到的问题，并描述如何重新触发这个问题。
         Please describe the bug you met in as much detail as possible. Additionally, describe the steps to reproduce this bug.
       placeholder: |
-        1. 点击 HMCL 上的某个按钮 | Click a button named ...
+        1. 点击 CofeMine Launcher 上的某个按钮 | Click a button named ...
         2. 向下翻页 | Scroll down
         3. ...
     validations:

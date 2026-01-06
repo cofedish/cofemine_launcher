@@ -40,10 +40,10 @@ OpenJDK 64-Bit Server VM (build 25+37-LTS, mixed mode, sharing)
 
 - You can get the latest source code via [Git](https://git-scm.com/downloads):
   ```shell
-  git clone https://github.com/HMCL-dev/HMCL.git
+  git clone https://github.com/cofedish/cofemine_launcher.git
   cd HMCL
   ```
-- You can manually download a specific version of the source code from the [GitHub Release page](https://github.com/HMCL-dev/HMCL/releases).
+- You can manually download a specific version of the source code from the [GitHub Release page](https://github.com/cofedish/cofemine_launcher/releases).
 
 ## Build HMCL
 

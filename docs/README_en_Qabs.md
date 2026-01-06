@@ -1,6 +1,6 @@
 # ɹǝɥɔunɐ˥ ¡ʇɟɐɹɔǝuᴉW ollǝH
 
-[![pɐoꞁuʍoᗡ](https://img.shields.io/github/downloads/HMCL-dev/HMCL/total?label=p%C9%90o%EA%9E%81u%CA%8Do%E1%97%A1&style=flat)](https://github.com/HMCL-dev/HMCL/releases)
+[![pɐoꞁuʍoᗡ](https://img.shields.io/github/downloads/cofedish/cofemine_launcher/total?label=p%C9%90o%EA%9E%81u%CA%8Do%E1%97%A1&style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
 
 <!-- #BEGIN BLOCK -->
 <!-- #PROPERTY PROCESS_LINK=false -->
@@ -19,6 +19,6 @@
 
 ˙ǝʌoqɐ pǝʇsᴉl sǝʇᴉsqǝʍ lɐᴉɔᴉɟɟo ǝɥʇ ɯoɹɟ sǝsɐǝlǝɹ pɐoluʍop oʇ ʎluo pǝpuǝɯɯoɔǝɹ sᴉ ʇᴉ 'ʎɹɐssǝɔǝu ʇou ɥƃnoɥʇl∀
 
-˙[sǝsɐǝlǝɹ qnHʇᴉפ](https://github.com/HMCL-dev/HMCL/releases) uᴉ ˥ƆWH ɟo uoᴉsɹǝʌ ʇsǝʇɐl ǝɥʇ puᴉɟ oslɐ uɐɔ no⅄
+˙[sǝsɐǝlǝɹ qnHʇᴉפ](https://github.com/cofedish/cofemine_launcher/releases) uᴉ ˥ƆWH ɟo uoᴉsɹǝʌ ʇsǝʇɐl ǝɥʇ puᴉɟ oslɐ uɐɔ no⅄
 
-˙[ǝʇᴉsqǝʍ lɐᴉɔᴉɟɟo](https://hmcl.huangyuhui.net/download) ǝɥʇ ɯoɹɟ uoᴉsɹǝʌ ʇsǝʇɐl ǝɥʇ pɐoluʍop
+˙[ǝʇᴉsqǝʍ lɐᴉɔᴉɟɟo](https://cofemine.ru) ǝɥʇ ɯoɹɟ uoᴉsɹǝʌ ʇsǝʇɐl ǝɥʇ pɐoluʍop

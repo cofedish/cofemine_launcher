@@ -2,11 +2,11 @@
 
 <!-- #BEGIN COPY -->
 <!-- #PROPERTY NAME=BADGES -->
-[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://cnb.cool/HMCL-dev/HMCL)
-[![Downloads](https://img.shields.io/github/downloads/HMCL-dev/HMCL/total?label=Downloads&style=flat)](https://github.com/HMCL-dev/HMCL/releases)
-![Stars](https://img.shields.io/github/stars/HMCL-dev/HMCL?style=flat)
-[![Discord](https://img.shields.io/discord/995291757799538688.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/jVvC7HfM6U)
-[![QQ Group](https://img.shields.io/badge/QQ-HMCL-bright?label=&logo=qq&logoColor=ffffff&color=1EBAFC&labelColor=1DB0EF&logoSize=auto)](https://docs.hmcl.net/groups.html)
+[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://github.com/cofedish/cofemine_launcher)
+[![Downloads](https://img.shields.io/github/downloads/cofedish/cofemine_launcher/total?label=Downloads&style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+![Stars](https://img.shields.io/github/stars/cofedish/cofemine_launcher?style=flat)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?label=&logo=discord&logoColor=ffffff)](https://discord.gg/zyKM2XAnXW)
+[![Telegram](https://img.shields.io/badge/Telegram-CofeMine-26A5E4?label=&logo=telegram&logoColor=ffffff&logoSize=auto)](https://t.me/+rfvGU6sDSvEwZDgy)
 <!-- #END COPY -->
 
 <!-- #BEGIN LANGUAGE_SWITCHER -->
@@ -23,9 +23,9 @@ HMCL 有著強大的跨平臺能力。它不僅支援 Windows、Linux、macOS、
 
 ## 下載
 
-請從 [HMCL 官網](https://hmcl.huangyuhui.net/download) 下載最新版本的 HMCL。
+請從 [HMCL 官網](https://cofemine.ru) 下載最新版本的 HMCL。
 
-你也可以在 [GitHub Releases](https://github.com/HMCL-dev/HMCL/releases) 中下載最新版本的 HMCL。
+你也可以在 [GitHub Releases](https://github.com/cofedish/cofemine_launcher/releases) 中下載最新版本的 HMCL。
 
 雖然並不強制，但仍建議透過 HMCL 官網下載啟動器。
 
@@ -35,11 +35,11 @@ HMCL 有著強大的跨平臺能力。它不僅支援 Windows、Linux、macOS、
 
 ### 附加條款 (依據 GPLv3 開源協議第七條)
 
-1. 當你分發該程式的修改版本時，你必須以一種合理的方式修改該程式的名稱或版本號，以示其與原始版本不同。(依據 [GPLv3, 7(c)](https://github.com/HMCL-dev/HMCL/blob/11820e31a85d8989e41d97476712b07e7094b190/LICENSE#L372-L374))
+1. 當你分發該程式的修改版本時，你必須以一種合理的方式修改該程式的名稱或版本號，以示其與原始版本不同。(依據 [GPLv3, 7(c)](https://github.com/cofedish/cofemine_launcher/blob/main/LICENSE))
 
-   該程式的名稱及版本號可在 [此處](https://github.com/HMCL-dev/HMCL/blob/javafx/HMCL/src/main/java/org/jackhuang/hmcl/Metadata.java#L33-L35) 修改。
+   該程式的名稱及版本號可在 [此處](https://github.com/cofedish/cofemine_launcher/blob/main/HMCL/src/main/java/org/jackhuang/hmcl/Metadata.java) 修改。
 
-2. 你不得移除該程式所顯示的版權宣告。(依據 [GPLv3, 7(b)](https://github.com/HMCL-dev/HMCL/blob/11820e31a85d8989e41d97476712b07e7094b190/LICENSE#L368-L370))
+2. 你不得移除該程式所顯示的版權宣告。(依據 [GPLv3, 7(b)](https://github.com/cofedish/cofemine_launcher/blob/main/LICENSE))
 
 ## 貢獻
 

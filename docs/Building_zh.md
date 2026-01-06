@@ -40,10 +40,10 @@ OpenJDK 64-Bit Server VM (build 25+37-LTS, mixed mode, sharing)
 
 - 通过 [Git](https://git-scm.com/downloads) 可以获取最新源码:
   ```shell
-  git clone https://github.com/HMCL-dev/HMCL.git
+  git clone https://github.com/cofedish/cofemine_launcher.git
   cd HMCL
   ```
-- 从 [GitHub Release 页面](https://github.com/HMCL-dev/HMCL/releases)可以手动下载特定版本的源码。
+- 从 [GitHub Release 页面](https://github.com/cofedish/cofemine_launcher/releases)可以手动下载特定版本的源码。
 
 ## 构建 HMCL
 

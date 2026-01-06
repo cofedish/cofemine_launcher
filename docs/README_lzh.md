@@ -2,11 +2,11 @@
 
 <!-- #BEGIN COPY -->
 <!-- #PROPERTY NAME=BADGES -->
-[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://cnb.cool/HMCL-dev/HMCL)
-[![Downloads](https://img.shields.io/github/downloads/HMCL-dev/HMCL/total?label=Downloads&style=flat)](https://github.com/HMCL-dev/HMCL/releases)
-![Stars](https://img.shields.io/github/stars/HMCL-dev/HMCL?style=flat)
-[![Discord](https://img.shields.io/discord/995291757799538688.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/jVvC7HfM6U)
-[![QQ Group](https://img.shields.io/badge/QQ-HMCL-bright?label=&logo=qq&logoColor=ffffff&color=1EBAFC&labelColor=1DB0EF&logoSize=auto)](https://docs.hmcl.net/groups.html)
+[![CNB](https://img.shields.io/badge/cnb-mirror-ff6200?logo=cloudnativebuild)](https://github.com/cofedish/cofemine_launcher)
+[![Downloads](https://img.shields.io/github/downloads/cofedish/cofemine_launcher/total?label=Downloads&style=flat)](https://github.com/cofedish/cofemine_launcher/releases)
+![Stars](https://img.shields.io/github/stars/cofedish/cofemine_launcher?style=flat)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?label=&logo=discord&logoColor=ffffff)](https://discord.gg/zyKM2XAnXW)
+[![Telegram](https://img.shields.io/badge/Telegram-CofeMine-26A5E4?label=&logo=telegram&logoColor=ffffff&logoSize=auto)](https://t.me/+rfvGU6sDSvEwZDgy)
 <!-- #END COPY -->
 
 <!-- #BEGIN LANGUAGE_SWITCHER -->
@@ -24,9 +24,9 @@ HMCL 跨域甚廣。無論 Windows、Linux、macOS、FreeBSD 諸常見械綱，�
 
 ## 下載
 
-請自 [HMCL 官網](https://hmcl.huangyuhui.net/download) 取其最新版。
+請自 [HMCL 官網](https://cofemine.ru) 取其最新版。
 
-亦可於 [GitHub Releases](https://github.com/HMCL-dev/HMCL/releases) 得其新者。
+亦可於 [GitHub Releases](https://github.com/cofedish/cofemine_launcher/releases) 得其新者。
 
 雖非強制，然猶勸自官網取之。
 
