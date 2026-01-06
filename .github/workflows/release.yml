@@ -49,9 +49,9 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: |
-            "HMCL/build/libs/CofeMine Launcher-*.jar"
-            "HMCL/build/libs/CofeMine Launcher-*.jar.sha256"
-            "HMCL/build/libs/CofeMine Launcher-*.exe"
-            "HMCL/build/libs/CofeMine Launcher-*.exe.sha256"
-            "HMCL/build/libs/CofeMine Launcher-*.sh"
-            "HMCL/build/libs/CofeMine Launcher-*.sh.sha256"
+            HMCL/build/libs/CofeMine-Launcher-*.jar
+            HMCL/build/libs/CofeMine-Launcher-*.jar.sha256
+            HMCL/build/libs/CofeMine-Launcher-*.exe
+            HMCL/build/libs/CofeMine-Launcher-*.exe.sha256
+            HMCL/build/libs/CofeMine-Launcher-*.sh
+            HMCL/build/libs/CofeMine-Launcher-*.sh.sha256

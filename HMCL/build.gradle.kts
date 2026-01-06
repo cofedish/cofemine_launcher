@@ -36,7 +36,7 @@ val versionType = System.getenv("VERSION_TYPE")
     ?: if (isReleaseTag) "stable" else if (isOfficial) "nightly" else "unofficial"
 
 base {
-    archivesName.set("CofeMine Launcher")
+    archivesName.set("CofeMine-Launcher")
 }
 val versionRoot = System.getenv("VERSION_ROOT") ?: projectConfig.getProperty("versionRoot") ?: "3"
 
