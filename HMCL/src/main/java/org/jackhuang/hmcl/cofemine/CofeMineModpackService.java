@@ -141,7 +141,7 @@ public final class CofeMineModpackService {
                     .unzip();
         });
 
-        Task<Void> syncTask = new Task<>() {
+        Task<Void> syncTask = new Task<Void>() {
             @Override
             public void execute() throws Exception {
                 Path contentRoot = resolveContentRoot(extractDir);
