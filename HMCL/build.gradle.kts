@@ -22,9 +22,18 @@ plugins {
 
 val projectConfig = PropertiesUtils.load(rootProject.file("config/project.properties").toPath())
 
-val isOfficial = JenkinsUtils.IS_ON_CI || GitHubActionUtils.IS_ON_OFFICIAL_REPO
+val gitRefType = System.getenv("GITHUB_REF_TYPE")
+val gitRefName = System.getenv("GITHUB_REF_NAME")
+val releaseTag = when {
+    gitRefType == "tag" && !gitRefName.isNullOrBlank() -> gitRefName
+    else -> System.getenv("GITHUB_REF")?.takeIf { it.startsWith("refs/tags/") }?.removePrefix("refs/tags/")
+}
+val isReleaseTag = releaseTag != null && Regex("^v\\d+\\.\\d+\\.\\d+$").matches(releaseTag)
 
-val versionType = System.getenv("VERSION_TYPE") ?: if (isOfficial) "nightly" else "unofficial"
+val isOfficial = JenkinsUtils.IS_ON_CI || GitHubActionUtils.IS_ON_OFFICIAL_REPO || isReleaseTag
+
+val versionType = System.getenv("VERSION_TYPE")
+    ?: if (isReleaseTag) "stable" else if (isOfficial) "nightly" else "unofficial"
 val versionRoot = System.getenv("VERSION_ROOT") ?: projectConfig.getProperty("versionRoot") ?: "3"
 
 val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""
@@ -33,21 +42,25 @@ val curseForgeApiKey = System.getenv("CURSEFORGE_API_KEY") ?: ""
 
 val launcherExe = System.getenv("HMCL_LAUNCHER_EXE") ?: ""
 
-val buildNumber = System.getenv("BUILD_NUMBER")?.toInt()
-if (buildNumber != null) {
-    version = if (JenkinsUtils.IS_ON_CI && versionType == "dev") {
-        "$versionRoot.0.$buildNumber"
-    } else {
-        "$versionRoot.$buildNumber"
-    }
+if (isReleaseTag) {
+    version = releaseTag!!.removePrefix("v")
 } else {
-    val shortCommit = System.getenv("GITHUB_SHA")?.lowercase()?.substring(0, 7)
-    version = if (shortCommit.isNullOrBlank()) {
-        "$versionRoot.SNAPSHOT"
-    } else if (isOfficial) {
-        "$versionRoot.dev-$shortCommit"
+    val buildNumber = System.getenv("BUILD_NUMBER")?.toInt()
+    if (buildNumber != null) {
+        version = if (JenkinsUtils.IS_ON_CI && versionType == "dev") {
+            "$versionRoot.0.$buildNumber"
+        } else {
+            "$versionRoot.$buildNumber"
+        }
     } else {
-        "$versionRoot.unofficial-$shortCommit"
+        val shortCommit = System.getenv("GITHUB_SHA")?.lowercase()?.substring(0, 7)
+        version = if (shortCommit.isNullOrBlank()) {
+            "$versionRoot.SNAPSHOT"
+        } else if (isOfficial) {
+            "$versionRoot.dev-$shortCommit"
+        } else {
+            "$versionRoot.unofficial-$shortCommit"
+        }
     }
 }
 
