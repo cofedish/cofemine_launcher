@@ -49,9 +49,9 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: |
-            HMCL/build/libs/HMCL-*.jar
-            HMCL/build/libs/HMCL-*.jar.sha256
-            HMCL/build/libs/HMCL-*.exe
-            HMCL/build/libs/HMCL-*.exe.sha256
-            HMCL/build/libs/HMCL-*.sh
-            HMCL/build/libs/HMCL-*.sh.sha256
+            HMCL/build/libs/CofeMine-*.jar
+            HMCL/build/libs/CofeMine-*.jar.sha256
+            HMCL/build/libs/CofeMine-*.exe
+            HMCL/build/libs/CofeMine-*.exe.sha256
+            HMCL/build/libs/CofeMine-*.sh
+            HMCL/build/libs/CofeMine-*.sh.sha256

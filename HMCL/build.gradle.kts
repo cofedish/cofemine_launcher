@@ -34,6 +34,10 @@ val isOfficial = JenkinsUtils.IS_ON_CI || GitHubActionUtils.IS_ON_OFFICIAL_REPO 
 
 val versionType = System.getenv("VERSION_TYPE")
     ?: if (isReleaseTag) "stable" else if (isOfficial) "nightly" else "unofficial"
+
+base {
+    archivesName.set("CofeMine")
+}
 val versionRoot = System.getenv("VERSION_ROOT") ?: projectConfig.getProperty("versionRoot") ?: "3"
 
 val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""

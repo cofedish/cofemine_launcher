@@ -36,21 +36,21 @@ jobs:
     - name: Upload JAR
       uses: actions/upload-artifact@v4
       with:
-        name: HMCL-${{ env.SHORT_SHA }}-jar
+        name: CofeMine-${{ env.SHORT_SHA }}-jar
         path: |
-          HMCL/build/libs/HMCL-*.jar
-          HMCL/build/libs/HMCL-*.jar.sha256
+          HMCL/build/libs/CofeMine-*.jar
+          HMCL/build/libs/CofeMine-*.jar.sha256
     - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
-        name: HMCL-${{ env.SHORT_SHA }}-exe
+        name: CofeMine-${{ env.SHORT_SHA }}-exe
         path: |
-          HMCL/build/libs/HMCL-*.exe
-          HMCL/build/libs/HMCL-*.exe.sha256
+          HMCL/build/libs/CofeMine-*.exe
+          HMCL/build/libs/CofeMine-*.exe.sha256
     - name: Upload SH
       uses: actions/upload-artifact@v4
       with:
-        name: HMCL-${{ env.SHORT_SHA }}-sh
+        name: CofeMine-${{ env.SHORT_SHA }}-sh
         path: |
-          HMCL/build/libs/HMCL-*.sh
-          HMCL/build/libs/HMCL-*.sh.sha256
+          HMCL/build/libs/CofeMine-*.sh
+          HMCL/build/libs/CofeMine-*.sh.sha256
