@@ -460,6 +460,53 @@ public final class Config extends ObservableSetting {
         this.backgroundImageOpacity.set(backgroundImageOpacity);
     }
 
+    // CofeMine
+
+    @SerializedName("cofemineInstancePath")
+    private final StringProperty cofemineInstancePath = new SimpleStringProperty();
+
+    public StringProperty cofemineInstancePathProperty() {
+        return cofemineInstancePath;
+    }
+
+    public String getCofemineInstancePath() {
+        return cofemineInstancePath.get();
+    }
+
+    public void setCofemineInstancePath(String cofemineInstancePath) {
+        this.cofemineInstancePath.set(cofemineInstancePath);
+    }
+
+    @SerializedName("cofemineModpackZipUrl")
+    private final StringProperty cofemineModpackZipUrl = new SimpleStringProperty("https://cofemine.ru/modpack/cofemine-pack.zip");
+
+    public StringProperty cofemineModpackZipUrlProperty() {
+        return cofemineModpackZipUrl;
+    }
+
+    public String getCofemineModpackZipUrl() {
+        return cofemineModpackZipUrl.get();
+    }
+
+    public void setCofemineModpackZipUrl(String cofemineModpackZipUrl) {
+        this.cofemineModpackZipUrl.set(cofemineModpackZipUrl);
+    }
+
+    @SerializedName("cofemineModpackManifestUrl")
+    private final StringProperty cofemineModpackManifestUrl = new SimpleStringProperty("https://cofemine.ru/modpack/manifest.json");
+
+    public StringProperty cofemineModpackManifestUrlProperty() {
+        return cofemineModpackManifestUrl;
+    }
+
+    public String getCofemineModpackManifestUrl() {
+        return cofemineModpackManifestUrl.get();
+    }
+
+    public void setCofemineModpackManifestUrl(String cofemineModpackManifestUrl) {
+        this.cofemineModpackManifestUrl.set(cofemineModpackManifestUrl);
+    }
+
     // Networks
 
     @SerializedName("autoDownloadThreads")
