@@ -10,6 +10,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      MAVEN_CENTRAL_REPO: https://repo1.maven.org/maven2/
 
     steps:
     - uses: actions/checkout@v4

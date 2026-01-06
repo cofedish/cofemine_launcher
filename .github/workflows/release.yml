@@ -22,6 +22,8 @@ jobs:
             task: checkUpdateStable
     runs-on: ubuntu-latest
     name: check-update-${{ matrix.channel }}
+    env:
+      MAVEN_CENTRAL_REPO: https://repo1.maven.org/maven2/
     steps:
       - name: Checkout
         uses: actions/checkout@v6
