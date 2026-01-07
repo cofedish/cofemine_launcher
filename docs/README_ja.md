@@ -15,11 +15,11 @@ English ([Standard](README.md), [uʍoᗡ ǝpᴉsd∩](README_en_Qabs.md)) | 中�
 
 ## 紹介
 
-HMCLはオープンソースでクロスプラットフォーム対応のMinecraftランチャーです。Mod管理、ゲームカスタマイズ、Modローダーのインストール（Forge、NeoForge、Cleanroom、Fabric、Quilt、LiteLoader、OptiFine）、Modパック作成、UIカスタマイズなど、さまざまな機能をサポートしています。
+CofeMine Launcherはオープンソースでクロスプラットフォーム対応のMinecraftランチャーです。Mod管理、ゲームカスタマイズ、Modローダーのインストール（Forge、NeoForge、Cleanroom、Fabric、Quilt、LiteLoader、OptiFine）、Modパック作成、UIカスタマイズなど、さまざまな機能をサポートしています。
 
-HMCLは優れたクロスプラットフォーム性能を持っています。Windows、Linux、macOS、FreeBSDなどの異なるオペレーティングシステムだけでなく、x86、ARM、RISC-V、MIPS、LoongArchなどのさまざまなCPUアーキテクチャにも対応しています。HMCLを使えば、さまざまなプラットフォームでMinecraftを簡単に楽しむことができます。
+CofeMine Launcherは優れたクロスプラットフォーム性能を持っています。Windows、Linux、macOS、FreeBSDなどの異なるオペレーティングシステムだけでなく、x86、ARM、RISC-V、MIPS、LoongArchなどのさまざまなCPUアーキテクチャにも対応しています。CofeMine Launcherを使えば、さまざまなプラットフォームでMinecraftを簡単に楽しむことができます。
 
-HMCLが対応しているシステムやCPUアーキテクチャについては、[この表](PLATFORM.md)をご参照ください。
+CofeMine Launcherが対応しているシステムやCPUアーキテクチャについては、[この表](PLATFORM.md)をご参照ください。
 
 ## ダウンロード
 
@@ -48,12 +48,12 @@ HMCLが対応しているシステムやCPUアーキテクチャについては�
 
 | パラメータ                                        | 説明                                                                          |
 |----------------------------------------------|-----------------------------------------------------------------------------|
-| `-Dhmcl.home=<path>`                         | HMCLディレクトリを上書きします                                                           |
+| `-Dhmcl.home=<path>`                         | CofeMine Launcherディレクトリを上書きします                                                           |
 | `-Dhmcl.self_integrity_check.disable=true`   | アップデート時の自己整合性チェックをバイパスします                                                   |
 | `-Dhmcl.bmclapi.override=<url>`              | BMCLAPIダウンロードプロバイダーのAPIルートを上書きします。デフォルトは`https://bmclapi2.bangbang93.com`です |
 | `-Dhmcl.font.override=<font family>`         | フォントファミリーを上書きします                                                            |
 | `-Dhmcl.version.override=<version>`          | バージョン番号を上書きします                                                              |
-| `-Dhmcl.update_source.override=<url>`        | HMCL本体のアップデートソースを上書きします                                                     |
+| `-Dhmcl.update_source.override=<url>`        | CofeMine Launcher本体のアップデートソースを上書きします                                                     |
 | `-Dhmcl.authlibinjector.location=<path>`     | 指定したauthlib-injectorを使用します（ダウンロードせずに）                                       |
 | `-Dhmcl.openjfx.repo=<maven repository url>` | OpenJFXダウンロード用のカスタムMavenリポジトリを追加します                                         |
 | `-Dhmcl.native.encoding=<encoding>`          | ネイティブエンコーディングを上書きします                                                        |

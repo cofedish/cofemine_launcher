@@ -16,17 +16,17 @@ English ([Standard](README.md), [uʍoᗡ ǝpᴉsd∩](README_en_Qabs.md)) | 中�
 
 ## Introducción
 
-HMCL es un lanzador de Minecraft de código abierto y multiplataforma que admite la gestión de mods, personalización del juego, instalación de ModLoaders (Forge, NeoForge, Cleanroom, Fabric, Quilt, LiteLoader y OptiFine), creación de modpacks, personalización de la interfaz de usuario y más.
+CofeMine Launcher es un lanzador de Minecraft de código abierto y multiplataforma que admite la gestión de mods, personalización del juego, instalación de ModLoaders (Forge, NeoForge, Cleanroom, Fabric, Quilt, LiteLoader y OptiFine), creación de modpacks, personalización de la interfaz de usuario y más.
 
-HMCL tiene increíbles capacidades multiplataforma. No solo funciona en diferentes sistemas operativos como Windows, Linux, macOS y FreeBSD, sino que también es compatible con varias arquitecturas de CPU como x86, ARM, RISC-V, MIPS y LoongArch. Puedes disfrutar fácilmente de Minecraft en diferentes plataformas a través de HMCL.
+CofeMine Launcher tiene increíbles capacidades multiplataforma. No solo funciona en diferentes sistemas operativos como Windows, Linux, macOS y FreeBSD, sino que también es compatible con varias arquitecturas de CPU como x86, ARM, RISC-V, MIPS y LoongArch. Puedes disfrutar fácilmente de Minecraft en diferentes plataformas a través de CofeMine Launcher.
 
-Para los sistemas y arquitecturas de CPU compatibles con HMCL, consulta [esta tabla](PLATFORM.md).
+Para los sistemas y arquitecturas de CPU compatibles con CofeMine Launcher, consulta [esta tabla](PLATFORM.md).
 
 ## Descarga
 
 Descarga la última versión desde el [sitio web oficial](https://cofemine.ru).
 
-También puedes encontrar la última versión de HMCL en [GitHub Releases](https://github.com/cofedish/cofemine_launcher/releases).
+También puedes encontrar la última versión de CofeMine Launcher en [GitHub Releases](https://github.com/cofedish/cofemine_launcher/releases).
 
 Aunque no es necesario, se recomienda descargar las versiones solo de los sitios web oficiales mencionados anteriormente.
 
@@ -49,12 +49,12 @@ Consulta la página de la [Guía de compilación](./Building.md).
 
 | Parámetro                                         | Descripción                                                                                                     |
 |---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `-Dhmcl.home=<ruta>`                              | Sobrescribe el directorio de HMCL                                                                               |
+| `-Dhmcl.home=<ruta>`                              | Sobrescribe el directorio de CofeMine Launcher                                                                               |
 | `-Dhmcl.self_integrity_check.disable=true`        | Omite la verificación de integridad propia al buscar actualizaciones                                            |
 | `-Dhmcl.bmclapi.override=<url>`                   | Sobrescribe la raíz de la API del proveedor de descargas BMCLAPI. Por defecto `https://bmclapi2.bangbang93.com` |
 | `-Dhmcl.font.override=<familia de fuente>`        | Sobrescribe la familia de fuente                                                                                |
 | `-Dhmcl.version.override=<versión>`               | Sobrescribe el número de versión                                                                                |
-| `-Dhmcl.update_source.override=<url>`             | Sobrescribe la fuente de actualizaciones de HMCL                                                                |
+| `-Dhmcl.update_source.override=<url>`             | Sobrescribe la fuente de actualizaciones de CofeMine Launcher                                                                |
 | `-Dhmcl.authlibinjector.location=<ruta>`          | Usa el authlib-injector especificado (en vez de descargar uno)                                                  |
 | `-Dhmcl.openjfx.repo=<url del repositorio maven>` | Añade un repositorio Maven personalizado para descargar OpenJFX                                                 |
 | `-Dhmcl.native.encoding=<codificación>`           | Sobrescribe la codificación nativa                                                                              |
