@@ -1,0 +1,54 @@
+[
+  {
+    "image" : "/assets/img/icon.png",
+    "title" : "huangyuhui",
+    "subtitleLocalized" : "about.hmcl.author.statement",
+    "externalLink" : "https://github.com/huangyuhui"
+  },
+  {
+    "image" : "/assets/img/glavo.png",
+    "title" : "glavo",
+    "subtitleLocalized" : "about.thanks_to.glavo.statement",
+    "externalLink" : "https://github.com/Glavo"
+  },
+  {
+    "image" : "/assets/img/zekerzhayard.png",
+    "title" : "ZekerZhayard",
+    "subtitleLocalized" : "about.thanks_to.zekerzhayard.statement",
+    "externalLink" : "https://github.com/ZekerZhayard"
+  },
+  {
+    "image" : "/assets/img/zkitefly.png",
+    "title" : "zkitefly",
+    "subtitleLocalized" : "about.thanks_to.zkitefly.statement",
+    "externalLink" : "https://github.com/zkitefly"
+  },
+  {
+    "image" : "/assets/img/burningtnt.png",
+    "title" : "burningtnt",
+    "subtitleLocalized" : "about.thanks_to.burningtnt.statement",
+    "externalLink" : "https://github.com/burningtnt"
+  },
+  {
+    "image" : "/assets/img/bangbang93.png",
+    "title" : "bangbang93",
+    "subtitleLocalized" : "about.thanks_to.bangbang93.statement",
+    "externalLink" : "https://github.com/bangbang93"
+  },
+  {
+    "image" : "/assets/img/red_lnn.png",
+    "title" : "red_lnn",
+    "subtitleLocalized" : "about.thanks_to.red_lnn.statement"
+  },
+  {
+    "image" : "/assets/img/ShulkerSakura.png",
+    "title" : "ShulkerSakura",
+    "subtitleLocalized" : "about.thanks_to.shulkersakura.statement",
+    "externalLink" : "https://github.com/ShulkerSakura"
+  },
+  {
+    "image" : "/assets/img/yushijinhun.png",
+    "title" : "yushijinhun",
+    "subtitleLocalized" : "about.thanks_to.yushijinhun.statement"
+  }
+]

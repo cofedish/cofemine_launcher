@@ -57,8 +57,10 @@ public final class AboutPage extends StackPane {
             author.setSubtitle(i18n("about.author.statement"));
             author.setExternalLink(Metadata.GITHUB_URL);
 
-            about.getContent().setAll(launcher, author);
+            about.getContent().setAll(author, launcher);
         }
+
+        ComponentList hmcl = loadIconedTwoLineList("/assets/about/hmcl.json");
 
         ComponentList thanks = loadIconedTwoLineList("/assets/about/thanks.json");
 
@@ -89,6 +91,9 @@ public final class AboutPage extends StackPane {
         content.getChildren().setAll(
                 ComponentList.createComponentListTitle(i18n("about")),
                 about,
+
+                ComponentList.createComponentListTitle(i18n("about.hmcl")),
+                hmcl,
 
                 ComponentList.createComponentListTitle(i18n("about.thanks_to")),
                 thanks,
