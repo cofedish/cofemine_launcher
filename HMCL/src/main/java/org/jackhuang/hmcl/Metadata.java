@@ -45,16 +45,23 @@ public final class Metadata {
     public static final int MINIMUM_SUPPORTED_JAVA_VERSION = 17;
     public static final int RECOMMENDED_JAVA_VERSION = 21;
 
-    public static final String PUBLISH_URL = "https://hmcl.huangyuhui.net";
-    public static final String ABOUT_URL = PUBLISH_URL + "/about";
-    public static final String DOWNLOAD_URL = PUBLISH_URL + "/download";
-    public static final String HMCL_UPDATE_URL = System.getProperty("hmcl.update_source.override", PUBLISH_URL + "/api/update_link");
+    public static final String SITE_URL = "https://cofemine.ru";
+    public static final String TELEGRAM_URL = "https://t.me/+rfvGU6sDSvEwZDgy";
+    public static final String DISCORD_URL = "https://discord.gg/zyKM2XAnXW";
+    public static final String GITHUB_URL = "https://github.com/cofedish/cofemine_launcher";
+    public static final String GITHUB_RELEASES_URL = GITHUB_URL + "/releases";
+    public static final String GITHUB_ISSUES_URL = GITHUB_URL + "/issues/new/choose";
 
-    public static final String DOCS_URL = "https://docs.hmcl.net";
-    public static final String CONTACT_URL = DOCS_URL + "/help.html";
-    public static final String CHANGELOG_URL = DOCS_URL + "/changelog/";
-    public static final String EULA_URL = DOCS_URL + "/eula/hmcl.html";
-    public static final String GROUPS_URL = "https://www.bilibili.com/opus/905435541874409529";
+    public static final String PUBLISH_URL = SITE_URL;
+    public static final String ABOUT_URL = SITE_URL;
+    public static final String DOWNLOAD_URL = GITHUB_RELEASES_URL;
+    public static final String HMCL_UPDATE_URL = System.getProperty("hmcl.update_source.override", SITE_URL + "/api/update_link");
+
+    public static final String DOCS_URL = SITE_URL;
+    public static final String CONTACT_URL = TELEGRAM_URL;
+    public static final String CHANGELOG_URL = GITHUB_RELEASES_URL;
+    public static final String EULA_URL = GITHUB_URL + "/blob/main/LICENSE";
+    public static final String GROUPS_URL = TELEGRAM_URL;
 
     public static final String BUILD_CHANNEL = JarUtils.getAttribute("hmcl.version.type", "nightly");
     public static final String GITHUB_SHA = JarUtils.getAttribute("hmcl.version.hash", null);
@@ -119,10 +126,7 @@ public final class Metadata {
             else
                 supportedArchitectures = EnumSet.noneOf(Architecture.class);
             if (supportedArchitectures.contains(Architecture.SYSTEM_ARCH))
-                return String.format("https://docs.hmcl.net/downloads/%s/%s.html",
-                        OperatingSystem.CURRENT_OS.getCheckedName(),
-                        Architecture.SYSTEM_ARCH.getCheckedName()
-                );
+                return SITE_URL + "/java";
             else
                 return null;
         }

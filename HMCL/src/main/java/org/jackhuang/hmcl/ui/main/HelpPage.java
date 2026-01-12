@@ -18,12 +18,14 @@
 package org.jackhuang.hmcl.ui.main;
 
 import com.google.gson.annotations.SerializedName;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import org.jackhuang.hmcl.Metadata;
 import org.jackhuang.hmcl.task.Schedulers;
 import org.jackhuang.hmcl.task.Task;
+import org.jackhuang.hmcl.theme.Themes;
 import org.jackhuang.hmcl.ui.FXUtils;
 import org.jackhuang.hmcl.ui.construct.ComponentList;
 import org.jackhuang.hmcl.ui.construct.IconedTwoLineListItem;
@@ -35,6 +37,7 @@ import java.util.List;
 
 import static org.jackhuang.hmcl.util.gson.JsonUtils.listTypeOf;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
+import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 
 public class HelpPage extends SpinnerPane {
 
@@ -64,7 +67,21 @@ public class HelpPage extends SpinnerPane {
     private void loadHelp() {
         showSpinner();
         Task.supplyAsync(() -> HttpRequest.GET(Metadata.DOCS_URL + "/index.json").getJson(listTypeOf(HelpCategory.class)))
-                .thenAcceptAsync(Schedulers.javafx(), helpCategories -> {
+                .setName("Load help index")
+                .whenComplete(Schedulers.javafx(), (helpCategories, exception) -> {
+                    if (exception != null) {
+                        LOG.warning("Failed to load help index", exception);
+                        addFallbackHelp();
+                        hideSpinner();
+                        return;
+                    }
+
+                    if (helpCategories == null || helpCategories.isEmpty()) {
+                        addFallbackHelp();
+                        hideSpinner();
+                        return;
+                    }
+
                     for (HelpCategory category : helpCategories) {
                         ComponentList categoryPane = new ComponentList();
 
@@ -82,6 +99,57 @@ public class HelpPage extends SpinnerPane {
                     }
                     hideSpinner();
                 }).start();
+    }
+
+    private void addFallbackHelp() {
+        ComponentList support = new ComponentList();
+        {
+            IconedTwoLineListItem telegram = new IconedTwoLineListItem();
+            telegram.setImage(FXUtils.newBuiltinImage("/assets/img/icon.png"));
+            telegram.setTitle(i18n("help.support.telegram.title"));
+            telegram.setSubtitle(i18n("help.support.telegram.desc"));
+            telegram.setExternalLink(Metadata.TELEGRAM_URL);
+
+            IconedTwoLineListItem discord = new IconedTwoLineListItem();
+            discord.setImage(FXUtils.newBuiltinImage("/assets/img/discord.png"));
+            discord.setTitle(i18n("help.support.discord.title"));
+            discord.setSubtitle(i18n("help.support.discord.desc"));
+            discord.setExternalLink(Metadata.DISCORD_URL);
+
+            IconedTwoLineListItem github = new IconedTwoLineListItem();
+            github.imageProperty().bind(Bindings.when(Themes.darkModeProperty())
+                    .then(FXUtils.newBuiltinImage("/assets/img/github-white.png"))
+                    .otherwise(FXUtils.newBuiltinImage("/assets/img/github.png")));
+            github.setTitle(i18n("help.support.github.title"));
+            github.setSubtitle(i18n("help.support.github.desc"));
+            github.setExternalLink(Metadata.GITHUB_ISSUES_URL);
+
+            support.getContent().setAll(telegram, discord, github);
+        }
+
+        ComponentList docs = new ComponentList();
+        {
+            IconedTwoLineListItem site = new IconedTwoLineListItem();
+            site.setImage(FXUtils.newBuiltinImage("/assets/img/icon.png"));
+            site.setTitle(i18n("help.docs.site.title"));
+            site.setSubtitle(i18n("help.docs.site.desc"));
+            site.setExternalLink(Metadata.SITE_URL);
+
+            IconedTwoLineListItem github = new IconedTwoLineListItem();
+            github.imageProperty().bind(Bindings.when(Themes.darkModeProperty())
+                    .then(FXUtils.newBuiltinImage("/assets/img/github-white.png"))
+                    .otherwise(FXUtils.newBuiltinImage("/assets/img/github.png")));
+            github.setTitle(i18n("help.docs.github.title"));
+            github.setSubtitle(i18n("help.docs.github.desc"));
+            github.setExternalLink(Metadata.GITHUB_URL);
+
+            docs.getContent().setAll(site, github);
+        }
+
+        content.getChildren().add(ComponentList.createComponentListTitle(i18n("help.category.support")));
+        content.getChildren().add(support);
+        content.getChildren().add(ComponentList.createComponentListTitle(i18n("help.category.docs")));
+        content.getChildren().add(docs);
     }
 
     private static class HelpCategory {

@@ -110,8 +110,7 @@ public final class TerracottaMetadata {
     public static final AbstractTerracottaProvider PROVIDER;
     public static final String PACKAGE_NAME;
     public static final List<Link> PACKAGE_LINKS;
-    public static final String FEEDBACK_LINK = NetworkUtils.withQuery("https://docs.hmcl.net/multiplayer/feedback.html", Map.of(
-            "v", "v1",
+    public static final String FEEDBACK_LINK = NetworkUtils.withQuery(Metadata.GITHUB_ISSUES_URL, Map.of(
             "launcher_version", Metadata.VERSION
     ));
 

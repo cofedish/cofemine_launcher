@@ -55,7 +55,7 @@ public class FeedbackPage extends SpinnerPane {
             discord.setImage(FXUtils.newBuiltinImage("/assets/img/discord.png"));
             discord.setTitle(i18n("contact.chat.discord"));
             discord.setSubtitle(i18n("contact.chat.discord.statement"));
-            discord.setExternalLink("https://discord.gg/jVvC7HfM6U");
+            discord.setExternalLink(Metadata.DISCORD_URL);
 
             groups.getContent().setAll(users, discord);
         }
@@ -68,7 +68,7 @@ public class FeedbackPage extends SpinnerPane {
                     .otherwise(FXUtils.newBuiltinImage("/assets/img/github.png")));
             github.setTitle(i18n("contact.feedback.github"));
             github.setSubtitle(i18n("contact.feedback.github.statement"));
-            github.setExternalLink("https://github.com/HMCL-dev/HMCL/issues/new/choose");
+            github.setExternalLink(Metadata.GITHUB_ISSUES_URL);
 
             feedback.getContent().setAll(github);
         }

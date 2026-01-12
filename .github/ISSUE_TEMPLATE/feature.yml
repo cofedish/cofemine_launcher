@@ -1,32 +1,32 @@
-name: "Идея | Feature Request"
-description: "Предложить улучшение для CofeMine Launcher | Suggest a feature for CofeMine Launcher."
+name: "Предложение | Feature Request"
+description: "RU: Предложить улучшение для CofeMine Launcher. EN: Suggest a feature for CofeMine Launcher."
 title: "[Feature] "
-labels: enhancement
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        RU: Пожалуйста, проверь, не создана ли уже похожая заявка.
+        RU: Перед отправкой проверьте, нет ли уже похожих запросов.
         EN: Please check for existing similar requests before submitting.
   - type: textarea
     id: summary
     attributes:
-      label: "Суть предложения | Summary"
-      description: "RU: Что именно хочешь добавить. EN: what you want to add."
+      label: "Кратко | Summary"
+      description: "RU: Что вы хотите добавить или изменить. EN: What do you want to add or change."
       placeholder: "RU: Добавить... / EN: Add..."
     validations:
       required: true
   - type: textarea
     id: reason
     attributes:
-      label: "Зачем это нужно | Why"
-      description: "RU: Почему это важно. EN: why this matters."
+      label: "Зачем | Why"
+      description: "RU: Почему это важно. EN: Why this matters."
     validations:
       required: true
   - type: textarea
     id: details
     attributes:
       label: "Детали | Details"
-      description: "RU: Примеры, UX, варианты реализации. EN: examples, UX notes, implementation ideas."
+      description: "RU: Примеры, UX-заметки, идеи реализации. EN: Examples, UX notes, implementation ideas."
     validations:
       required: false

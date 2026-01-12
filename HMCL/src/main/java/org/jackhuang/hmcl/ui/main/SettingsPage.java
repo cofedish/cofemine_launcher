@@ -447,7 +447,7 @@ public final class SettingsPage extends ScrollPane {
     }
 
     private void onSponsor() {
-        FXUtils.openLink("https://github.com/HMCL-dev/HMCL");
+        FXUtils.openLink(Metadata.SITE_URL);
     }
 
     private void clearCacheDirectory() {

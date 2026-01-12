@@ -49,13 +49,13 @@ public final class AboutPage extends StackPane {
             launcher.setImage(FXUtils.newBuiltinImage("/assets/img/icon.png"));
             launcher.setTitle(Metadata.FULL_NAME);
             launcher.setSubtitle(Metadata.VERSION + "\n" + i18n("about.cofemine.statement"));
-            launcher.setExternalLink("https://cofemine.ru");
+            launcher.setExternalLink(Metadata.SITE_URL);
 
             IconedTwoLineListItem author = new IconedTwoLineListItem();
             author.setImage(FXUtils.newBuiltinImage("/assets/img/yellow_fish.png"));
-            author.setTitle("huanghongxun");
+            author.setTitle("cofedish");
             author.setSubtitle(i18n("about.author.statement"));
-            author.setExternalLink("https://space.bilibili.com/1445341");
+            author.setExternalLink(Metadata.GITHUB_URL);
 
             about.getContent().setAll(launcher, author);
         }
@@ -79,7 +79,7 @@ public final class AboutPage extends StackPane {
             IconedTwoLineListItem openSource = new IconedTwoLineListItem();
             openSource.setTitle(i18n("about.open_source"));
             openSource.setSubtitle(i18n("about.open_source.statement"));
-            openSource.setExternalLink("https://github.com/HMCL-dev/HMCL");
+            openSource.setExternalLink(Metadata.GITHUB_URL);
 
             legal.getContent().setAll(copyright, claim, openSource);
         }

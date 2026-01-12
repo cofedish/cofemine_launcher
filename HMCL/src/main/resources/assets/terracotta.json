@@ -80,11 +80,11 @@
     },
     {
       "desc": {
-        "default": "Tencent QQ Group",
-        "zh": "QQ 群",
-        "zh-Hant": "QQ 群"
+        "default": "Telegram Group",
+        "zh": "Telegram 群",
+        "zh-Hant": "Telegram 群"
       },
-      "link": "https://qm.qq.com/cgi-bin/qm/qr?k\u003dnIf5u5xQ3LXEP4ZEmLQtfjtpppjgHfI5\u0026jump_from\u003dwebapi\u0026authKey\u003dsXStlPuGzhD1JyAhyExd2OwjzZkRf3x7bAEb/j1xNX1wrQcDdg71qPrhumIm6pyf"
+      "link": "https://t.me/+rfvGU6sDSvEwZDgy"
     }
   ]
 }
