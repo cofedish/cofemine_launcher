@@ -140,6 +140,12 @@ public final class IntegrityChecker {
     }
 
     public static boolean isOfficial() {
-        return isSelfVerified() || (Metadata.GITHUB_SHA != null && Metadata.BUILD_CHANNEL.equals("nightly"));
+        if (isSelfVerified()) {
+            return true;
+        }
+        if (Metadata.GITHUB_SHA == null) {
+            return false;
+        }
+        return "nightly".equals(Metadata.BUILD_CHANNEL) || "stable".equals(Metadata.BUILD_CHANNEL);
     }
 }
