@@ -41,6 +41,7 @@ jobs:
           MICROSOFT_AUTH_ID: ${{ secrets.MICROSOFT_AUTH_ID }}
           MICROSOFT_AUTH_SECRET: ${{ secrets.MICROSOFT_AUTH_SECRET }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          HMCL_LAUNCHER_EXE: tools/HMCLauncher.exe
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:

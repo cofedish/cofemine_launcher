@@ -53,6 +53,7 @@ language-subtag-registry
 .nb-gradle
 
 *.exe
+!tools/HMCLauncher.exe
 
 # macos
 .DS_Store
