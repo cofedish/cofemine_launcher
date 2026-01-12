@@ -44,7 +44,11 @@ val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""
 val microsoftAuthSecret = System.getenv("MICROSOFT_AUTH_SECRET") ?: ""
 val curseForgeApiKey = System.getenv("CURSEFORGE_API_KEY") ?: ""
 
-val launcherExe = System.getenv("HMCL_LAUNCHER_EXE") ?: ""
+val launcherExe = System.getenv("HMCL_LAUNCHER_EXE")
+val launcherExeFile = launcherExe?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
+if (launcherExeFile != null && !launcherExeFile.exists()) {
+    throw GradleException("HMCL_LAUNCHER_EXE points to missing file: ${launcherExeFile.absolutePath}")
+}
 
 if (isReleaseTag) {
     version = releaseTag!!.removePrefix("v")
@@ -78,7 +82,7 @@ dependencies {
     implementation(libs.java.info)
     implementation(libs.monet.fx)
 
-    if (launcherExe.isBlank()) {
+    if (launcherExeFile == null) {
         implementation(libs.hmclauncher)
     }
 
@@ -230,9 +234,9 @@ tasks.shadowJar {
         "Enable-Final-Field-Mutation" to "ALL-UNNAMED",
     )
 
-    if (launcherExe.isNotBlank()) {
+    if (launcherExeFile != null) {
         into("assets") {
-            from(file(launcherExe))
+            from(launcherExeFile)
         }
     }
 
