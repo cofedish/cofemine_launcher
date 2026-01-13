@@ -35,6 +35,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.DirectoryChooser;
+import org.jackhuang.hmcl.cofemine.CofeMineInstallPlan;
 import org.jackhuang.hmcl.cofemine.CofeMineModpackManifest;
 import org.jackhuang.hmcl.cofemine.CofeMineModpackService;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatus;
@@ -394,6 +395,10 @@ public final class CofeMinePane extends VBox {
             CofeMineModpackManifest resolvedManifest = manifest;
             Profile profile = CofeMineModpackService.ensureProfile(targetDir);
             boolean preferArchiveDescriptor = CofeMineModpackService.isDefaultModpackUrl(zipUrl);
+            if (preferArchiveDescriptor) {
+                runModpackInstallDirect(profile, targetDir, zipUrl, manifestUrl, resolvedManifest);
+                return;
+            }
             CofeMineModpackInstallWizardProvider provider = new CofeMineModpackInstallWizardProvider(
                     profile,
                     targetDir,
@@ -411,6 +416,41 @@ public final class CofeMinePane extends VBox {
             );
             Controllers.getDecorator().startWizard(provider, i18n("cofemine.modpack.title"));
         }, Platform::runLater);
+    }
+
+    private void runModpackInstallDirect(Profile profile, Path targetDir, String zipUrl, String manifestUrl, CofeMineModpackManifest manifest) {
+        busy.set(true);
+        try {
+            CofeMineInstallPlan plan = new CofeMineInstallPlan(null, null, List.of(), true);
+            TaskExecutor executor = modpackService.createInstallTask(profile, targetDir, zipUrl, manifest, manifestUrl, plan).executor();
+            executor.addTaskListener(new TaskListener() {
+                @Override
+                public void onStop(boolean success, TaskExecutor executor) {
+                    Platform.runLater(() -> {
+                        busy.set(false);
+                        if (success) {
+                            config().setCofemineInstancePath(targetDir.toString());
+                            CofeMineModpackService.ensureProfile(targetDir);
+                            updateModpackState();
+                        } else if (executor.getException() != null) {
+                            Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
+                                    i18n("message.error"),
+                                    MessageDialogPane.MessageType.ERROR);
+                        }
+                    });
+                }
+            });
+
+            Controllers.taskDialog(executor,
+                    i18n("cofemine.modpack.installing"),
+                    TaskCancellationAction.NORMAL);
+            executor.start();
+        } catch (Exception e) {
+            busy.set(false);
+            Controllers.dialog(StringUtils.getStackTrace(e),
+                    i18n("message.error"),
+                    MessageDialogPane.MessageType.ERROR);
+        }
     }
 
     private void runModpackTask(Mode mode, Path targetDir) {
