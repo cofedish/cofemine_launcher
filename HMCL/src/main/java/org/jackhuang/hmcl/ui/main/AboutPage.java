@@ -52,7 +52,7 @@ public final class AboutPage extends StackPane {
             launcher.setExternalLink(Metadata.SITE_URL);
 
             IconedTwoLineListItem author = new IconedTwoLineListItem();
-            author.setImage(FXUtils.newBuiltinImage("/assets/img/yellow_fish.png"));
+            author.setImage(FXUtils.newBuiltinImage("/assets/img/cofedish.gif"));
             author.setTitle("cofedish");
             author.setSubtitle(i18n("about.author.statement"));
             author.setExternalLink(Metadata.GITHUB_URL);
