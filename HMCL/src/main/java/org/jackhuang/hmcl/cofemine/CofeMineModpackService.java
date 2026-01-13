@@ -143,13 +143,13 @@ public final class CofeMineModpackService {
 
         Task<String> resolveTask = Task.supplyAsync("CofeMine Resolve", Schedulers.io(), () -> resolveDownloadUrl(zipUrl));
 
-        Task<Void> downloadTask = resolveTask.thenComposeAsync("CofeMine Download", Schedulers.io(), resolvedUrl -> {
+        Task<Void> downloadTask = resolveTask.thenComposeAsync(Schedulers.io(), resolvedUrl -> {
             String actualUrl = StringUtils.isBlank(resolvedUrl) ? zipUrl : resolvedUrl;
             FileDownloadTask task = new FileDownloadTask(actualUrl, archivePath, integrityCheck);
             if (looksLikeZip(actualUrl) || archiveName.toLowerCase(Locale.ROOT).endsWith(".zip")) {
                 task.addIntegrityCheckHandler(FileDownloadTask.ZIP_INTEGRITY_CHECK_HANDLER);
             }
-            task.setName(archiveName);
+            task.setName("CofeMine Download (" + archiveName + ")");
             return task;
         });
 
