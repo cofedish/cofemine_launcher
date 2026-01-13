@@ -1,12 +1,12 @@
-# Build Guide
+﻿# Build Guide
 
 <!-- #BEGIN LANGUAGE_SWITCHER -->
-**English** | [中文](Building_zh.md)
+**English** | [Chinese](Building_zh.md)
 <!-- #END LANGUAGE_SWITCHER -->
 
 ## Requirements
 
-To build the HMCL launcher, you need to install JDK 17 (or higher). You can download it here: [Download Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-25-lts).
+To build CofeMine Launcher, you need to install JDK 17 (or higher). You can download it here: [Download Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-25-lts).
 
 After installing the JDK, make sure the `JAVA_HOME` environment variable points to the required JDK directory.
 You can check the JDK version that `JAVA_HOME` points to like this:
@@ -36,21 +36,21 @@ OpenJDK 64-Bit Server VM (build 25+37-LTS, mixed mode, sharing)
 
 </details>
 
-## Get HMCL Source Code
+## Get CofeMine Launcher Source Code
 
 - You can get the latest source code via [Git](https://git-scm.com/downloads):
   ```shell
   git clone https://github.com/cofedish/cofemine_launcher.git
-  cd HMCL
+  cd cofemine_launcher
   ```
 - You can manually download a specific version of the source code from the [GitHub Release page](https://github.com/cofedish/cofemine_launcher/releases).
 
-## Build HMCL
+## Build CofeMine Launcher
 
-To build HMCL, switch to the root directory of the HMCL project and run the following command:
+To build CofeMine Launcher, switch to the root directory of the project and run the following command:
 
 ```shell
 ./gradlew clean makeExecutables
 ```
 
-The built HMCL program files are located in the `HMCL/build/libs` subdirectory under the project root.
+The built CofeMine Launcher program files are located in the `HMCL/build/libs` module directory under the project root.

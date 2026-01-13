@@ -1,17 +1,13 @@
-# 平臺支援狀態
+﻿# Platform Support Status
 
 <!-- #BEGIN LANGUAGE_SWITCHER -->
-[English](PLATFORM.md) | **中文** ([简体](PLATFORM_zh.md), **繁體**)
+[English](PLATFORM.md) | **Chinese**
 <!-- #END LANGUAGE_SWITCHER -->
 
-## 啟動器相容性
+## Launcher Compatibility
 
-<!-- #BEGIN COPY -->
+<!-- #BEGIN BLOCK -->
 <!-- #PROPERTY NAME=LAUNCHER_COMPATIBILITY -->
-<!-- #PROPERTY REPLACE="Fully supported" "完整支援" -->
-<!-- #PROPERTY REPLACE="Limited support" "有限支援" -->
-<!-- #PROPERTY REPLACE="New World" "新世界" -->
-<!-- #PROPERTY REPLACE="Old World" "舊世界" -->
 <table>
   <thead>
     <tr>
@@ -26,146 +22,108 @@
     <tr>
       <td>x86-64</td>
       <td>
-        ✅️ 完整支援 (Windows 7 ~ Windows 11)
+        Full (Windows 7 ~ Windows 11)
         <br>
-        ✅️ 完整支援 (Windows Server 2008 R2 ~ 2025)
+        Full (Windows Server 2008 R2 ~ 2025)
         <br>
-        🕰️ <a href="https://github.com/cofedish/cofemine_launcher/releases?q=3.6">HMCL 3.6</a> (Windows Vista)
+        Legacy (Windows Vista)
         <br>
-        🕰️ <a href="https://github.com/cofedish/cofemine_launcher/releases?q=3.6">HMCL 3.6</a> (Windows Server 2003 ~ 2008) 
+        Legacy (Windows Server 2003 ~ 2008)
       </td>
-      <td>✅️ 完整支援</td>
-      <td>✅️ 完整支援</td>
-      <td>✅ 完整支援</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Full</td>
     </tr>
     <tr>
       <td>x86</td>
       <td>
-        🕰️ 有限支援 (Windows 7 ~ Windows 10)
+        Limited (Windows 7 ~ Windows 10)
         <br>
-        🕰️ <a href="https://github.com/cofedish/cofemine_launcher/releases?q=3.6">HMCL 3.6</a> (Windows XP/Vista)
+        Legacy (Windows XP/Vista)
       </td>
-      <td>🕰️ 有限支援</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Limited</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>ARM64</td>
-      <td>✅️ 完整支援</td>
-      <td>✅️ 完整支援</td>
-      <td>✅️ 完整支援</td>
-      <td>/</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>ARM32</td>
-      <td>/️</td>
-      <td>🕰️ 有限支援</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Limited</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>MIPS64el</td>
-      <td>/</td>
-      <td>🕰️ 有限支援</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Limited</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>RISC-V 64</td>
-      <td>/</td>
-      <td>✅️ 完整支援</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Full</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>LoongArch64</td>
-      <td>/</td>
+      <td>Not supported</td>
       <td>
-        ✅️ 完整支援 (新世界)
+        Full (New World)
         <br>
-        🕰️ 有限支援 (舊世界)
+        Limited (Old World)
       </td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
   </tbody>
 </table>
-<!-- #END COPY -->
+<!-- #END BLOCK -->
 
-圖例：
+Legend:
 
-* ✅️ 完整支援
+- Full: fully supported by the CofeMine Launcher team.
+- Limited: legacy platforms; some features may be unavailable.
+- Legacy: older platforms with no active maintenance.
+- Not supported: not available at this time.
 
-  受到完整支援的平臺。HMCL 會盡可能為此平臺提供支援。
+## Game Compatibility
 
-* 🕰️ 有限支援
-
-  這些平臺通常是老舊的遺留平臺。
-
-  HMCL 可以在這些平臺上運作，但部分功能可能無法使用。
-
-  我們可能會為了降低維護成本而放棄為此平臺提供部分功能。
-
-* 🕰️ HMCL 3.6（有限支援）
-
-  HMCL 主分支不再支援此平臺。
-
-  我們透過 HMCL 3.6 LTS 分支繼續為該平臺提供安全修補與錯誤修復，
-  但此平臺上將無法獲得功能更新。
-
-* /（不支援）
-
-  HMCL 尚未支援此平臺。我們未來可能會支援此平臺。
-
-## 遊戲相容性
-
-<!-- #BEGIN COPY -->
+<!-- #BEGIN BLOCK -->
 <!-- #PROPERTY NAME=GAME_COMPATIBILITY -->
-<!-- #PROPERTY REPLACE="New World" "新世界" -->
-<!-- #PROPERTY REPLACE="Old World" "舊世界" -->
-<!-- #PROPERTY REPLACE="\\(use Rosetta 2\\)" "(使用 Rosetta 2)" -->
-|                             | Windows                                           | Linux                      | macOS                                                                   | FreeBSD                     |
-|-----------------------------|:--------------------------------------------------|:---------------------------|:------------------------------------------------------------------------|:----------------------------|
-| x86-64                      | ✅️                                                | ✅️                         | ✅️                                                                      | 👌 (Minecraft 1.13~1.21.11) |
-| x86                         | ✅️ (~1.20.4)                                      | ✅️ (~1.20.4)               | /                                                                       | /                           |
-| ARM64                       | 👌 (Minecraft 1.8~1.18.2)<br/>✅ (Minecraft 1.19+) | 👌 (Minecraft 1.8~1.21.11) | 👌 (Minecraft 1.6~1.18.2)<br/>✅ (Minecraft 1.19+)<br/>✅ (使用 Rosetta 2) | ❔                           |
-| ARM32                       | /️                                                | 👌 (Minecraft 1.8~1.20.1)  | /                                                                       | /                           |
-| MIPS64el                    | /                                                 | 👌 (Minecraft 1.8~1.20.1)  | /                                                                       | /                           |
-| RISC-V 64                   | /                                                 | 👌 (Minecraft 1.13~1.21.5) | /                                                                       | /                           |
-| LoongArch64 (新世界) | /                                                 | 👌 (Minecraft 1.6~1.21.11) | /                                                                       | /                           |
-| LoongArch64 (舊世界) | /                                                 | 👌 (Minecraft 1.6~1.20.1)  | /                                                                       | /                           |
-| PowerPC-64 (Little-Endian)  | /                                                 | ❔                          | /                                                                       | /                           |
-| S390x                       | /                                                 | ❔                          | /                                                                       | /                           |
-<!-- #END COPY -->
+|                             | Windows                                         | Linux                                      | macOS                                                                 | FreeBSD                           |
+|-----------------------------|:------------------------------------------------|:-------------------------------------------|:----------------------------------------------------------------------|:----------------------------------|
+| x86-64                      | Official                                        | Official                                   | Official                                                              | Community (Minecraft 1.13~1.21.11) |
+| x86                         | Official (~1.20.4)                              | Official (~1.20.4)                         | N/A                                                                   | N/A                               |
+| ARM64                       | Community (Minecraft 1.8~1.18.2)<br/>Official (Minecraft 1.19+) | Community (Minecraft 1.8~1.21.11) | Community (Minecraft 1.6~1.18.2)<br/>Official (Minecraft 1.19+)<br/>Official (Rosetta 2) | Low                               |
+| ARM32                       | N/A                                             | Community (Minecraft 1.8~1.20.1)           | N/A                                                                   | N/A                               |
+| MIPS64el                    | N/A                                             | Community (Minecraft 1.8~1.20.1)           | N/A                                                                   | N/A                               |
+| RISC-V 64                   | N/A                                             | Community (Minecraft 1.13~1.21.5)          | N/A                                                                   | N/A                               |
+| LoongArch64 (New World)     | N/A                                             | Community (Minecraft 1.6~1.21.11)          | N/A                                                                   | N/A                               |
+| LoongArch64 (Old World)     | N/A                                             | Community (Minecraft 1.6~1.20.1)           | N/A                                                                   | N/A                               |
+| PowerPC-64 (Little-Endian)  | N/A                                             | Low                                       | N/A                                                                   | N/A                               |
+| S390x                       | N/A                                             | Low                                       | N/A                                                                   | N/A                               |
+<!-- #END BLOCK -->
 
-圖例：
+Legend:
 
-* ✅: 官方支援的平臺
+- Official: supported by Mojang. Report game issues to Mojang.
+- Community: supported by the CofeMine Launcher team; may have more issues.
+- Low: requires manual native libraries and additional setup.
+- N/A: not available.
 
-  受 Mojang 官方支援。在遊戲中遇到的問題應該直接向 Mojang 回報。
+## Terracotta Compatibility
 
-* 👌: 支援的平臺
-
-  由 HMCL 提供支援，經過測試可以正常執行，但可能比得到全面支援的平臺有更多問題。  
-  不保證支援 Minecraft 1.6 以下的版本。  
-  如果你遇到在得到全面支援的平臺上不存在的問題，可以向 HMCL 回報。
-
-* ❔: 低級別支援的平臺
-
-  HMCL 可以在這個平臺上執行，並且有一些基本的支援。但是，還不能正常地啟動遊戲。  
-  如果你想正常啟動遊戲，則需要透過其他方式獲得遊戲所需的本機庫 (LWJGL)，並在（全域）遊戲設定中指定本機庫路徑。
-
-* `/`: 不支援的平臺
-
-  我們目前還沒有打算支援這些平臺，主要是因為我們沒有測試這些平臺的裝置。  
-  如果你能幫助我們進行測試，請透過提交 Issue 提出支援請求。
-
-## 陶瓦聯機相容性
-
-<!-- #BEGIN COPY -->
+<!-- #BEGIN BLOCK -->
 <!-- #PROPERTY NAME=TERRACOTTA_COMPATIBILITY -->
-<!-- #PROPERTY REPLACE="New World" "新世界" -->
-<!-- #PROPERTY REPLACE="Old World" "舊世界" -->
 <table>
   <thead>
     <tr>
@@ -180,60 +138,60 @@
     <tr>
       <td>x86-64</td>
       <td>
-        ✅️ (Windows 10 ~ Windows 11)
+        Full (Windows 10 ~ Windows 11)
         <br>
-        ✅️ (Windows Server 2016 ~ 2025)
+        Full (Windows Server 2016 ~ 2025)
       </td>
-      <td>✅️</td>
-      <td>✅️</td>
-      <td>✅️</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Full</td>
     </tr>
     <tr>
       <td>x86</td>
-      <td>/</td>
-      <td>/</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>ARM64</td>
-      <td>✅️</td>
-      <td>✅️</td>
-      <td>✅️</td>
-      <td>/</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Full</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>ARM32</td>
-      <td>/️</td>
-      <td>/</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>MIPS64el</td>
-      <td>/</td>
-      <td>/</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>RISC-V 64</td>
-      <td>/</td>
-      <td>❔</td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Low</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
     <tr>
       <td>LoongArch64</td>
-      <td>/</td>
+      <td>Not supported</td>
       <td>
-        ✅️ (新世界)
+        Full (New World)
         <br>
-        ❌ (舊世界)
+        Low (Old World)
       </td>
-      <td>/</td>
-      <td>/</td>
+      <td>Not supported</td>
+      <td>Not supported</td>
     </tr>
   </tbody>
 </table>
-<!-- #END COPY -->
+<!-- #END BLOCK -->

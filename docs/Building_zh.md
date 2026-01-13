@@ -1,15 +1,15 @@
-# 构建指南
+﻿# Build Guide
 
 <!-- #BEGIN LANGUAGE_SWITCHER -->
-[English](Building.md) | **中文**
+[English](Building.md) | **Chinese**
 <!-- #END LANGUAGE_SWITCHER -->
 
-## 环境需求
+## Requirements
 
-构建 HMCL 启动器需要安装 JDK 17 (或更高版本)。你可以从此处下载它: [Download Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-25-lts)。
+To build CofeMine Launcher, you need to install JDK 17 (or higher). You can download it here: [Download Liberica JDK](https://bell-sw.com/pages/downloads/#jdk-25-lts).
 
-在安装 JDK 后，请确保 `JAVA_HOME` 环境变量指向符合需求的 JDK 目录。
-你可以这样查看 `JAVA_HOME` 指向的 JDK 版本:
+After installing the JDK, make sure the `JAVA_HOME` environment variable points to the required JDK directory.
+You can check the JDK version that `JAVA_HOME` points to like this:
 
 <details>
 <summary>Windows</summary>
@@ -36,21 +36,21 @@ OpenJDK 64-Bit Server VM (build 25+37-LTS, mixed mode, sharing)
 
 </details>
 
-## 获取 HMCL 源码
+## Get CofeMine Launcher Source Code
 
-- 通过 [Git](https://git-scm.com/downloads) 可以获取最新源码:
+- You can get the latest source code via [Git](https://git-scm.com/downloads):
   ```shell
   git clone https://github.com/cofedish/cofemine_launcher.git
-  cd HMCL
+  cd cofemine_launcher
   ```
-- 从 [GitHub Release 页面](https://github.com/cofedish/cofemine_launcher/releases)可以手动下载特定版本的源码。
+- You can manually download a specific version of the source code from the [GitHub Release page](https://github.com/cofedish/cofemine_launcher/releases).
 
-## 构建 HMCL
+## Build CofeMine Launcher
 
-想要构建 HMCL，请切换到 HMCL 项目的根目录下，并执行以下命令:
+To build CofeMine Launcher, switch to the root directory of the project and run the following command:
 
 ```shell
 ./gradlew clean makeExecutables
 ```
 
-构建出的 HMCL 程序文件位于根目录下的 `HMCL/build/libs` 子目录中。
+The built CofeMine Launcher program files are located in the `HMCL/build/libs` module directory under the project root.
