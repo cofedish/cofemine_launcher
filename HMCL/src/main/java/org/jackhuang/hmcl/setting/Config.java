@@ -478,7 +478,7 @@ public final class Config extends ObservableSetting {
     }
 
     @SerializedName("cofemineModpackZipUrl")
-    private final StringProperty cofemineModpackZipUrl = new SimpleStringProperty("https://disk.yandex.ru/d/56CWgbzQBsUIiw");
+    private final StringProperty cofemineModpackZipUrl = new SimpleStringProperty("https://disk.yandex.ru/d/hodbEP83a9fu_g");
 
     public StringProperty cofemineModpackZipUrlProperty() {
         return cofemineModpackZipUrl;
@@ -490,6 +490,36 @@ public final class Config extends ObservableSetting {
 
     public void setCofemineModpackZipUrl(String cofemineModpackZipUrl) {
         this.cofemineModpackZipUrl.set(cofemineModpackZipUrl);
+    }
+
+    @SerializedName("cofemineServerHost")
+    private final StringProperty cofemineServerHost = new SimpleStringProperty("server.cofemine.ru");
+
+    public StringProperty cofemineServerHostProperty() {
+        return cofemineServerHost;
+    }
+
+    public String getCofemineServerHost() {
+        return cofemineServerHost.get();
+    }
+
+    public void setCofemineServerHost(String cofemineServerHost) {
+        this.cofemineServerHost.set(cofemineServerHost);
+    }
+
+    @SerializedName("cofemineServerPort")
+    private final IntegerProperty cofemineServerPort = new SimpleIntegerProperty(25565);
+
+    public IntegerProperty cofemineServerPortProperty() {
+        return cofemineServerPort;
+    }
+
+    public int getCofemineServerPort() {
+        return cofemineServerPort.get();
+    }
+
+    public void setCofemineServerPort(int cofemineServerPort) {
+        this.cofemineServerPort.set(cofemineServerPort);
     }
 
     @SerializedName("cofemineModpackManifestUrl")

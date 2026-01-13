@@ -61,17 +61,16 @@ import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
 public final class CofeMinePane extends VBox {
     private static final String SITE_URL = "https://cofemine.ru";
-    private static final String SERVER_HOST = "server.cofemine.ru";
-    private static final int SERVER_PORT = 25565;
     private static final String LOGO_PATH = "/assets/img/icon@4x.png";
     private static final double LOGO_SIZE = 28;
     private static final double COLLAPSED_SCALE = 0.6;
     private static final double COLLAPSED_LOGO_SCALE = 0.85;
     private static final javafx.util.Duration TOGGLE_DURATION = javafx.util.Duration.millis(240);
 
-    private final CofeMineServerStatusService statusService = new CofeMineServerStatusService(
-            SERVER_HOST, SERVER_PORT, Duration.ofSeconds(30));
+    private CofeMineServerStatusService statusService;
     private final CofeMineModpackService modpackService = new CofeMineModpackService();
+    private final javafx.beans.value.ChangeListener<Object> serverListener = (obs, oldVal, newVal) -> rebuildStatusService();
+    private final javafx.beans.value.ChangeListener<CofeMineServerStatus> statusListener = (obs, oldVal, newVal) -> updateStatus(newVal);
 
     private final Circle statusDot = new Circle(4);
     private final Label statusLabel = new Label();
@@ -110,7 +109,11 @@ public final class CofeMinePane extends VBox {
         JFXButton refreshButton = new JFXButton();
         refreshButton.getStyleClass().add("toggle-icon-tiny");
         refreshButton.setGraphic(SVG.REFRESH.createIcon(14));
-        refreshButton.setOnAction(event -> statusService.refreshNow());
+        refreshButton.setOnAction(event -> {
+            if (statusService != null) {
+                statusService.refreshNow();
+            }
+        });
         FXUtils.installFastTooltip(refreshButton, i18n("cofemine.server.refresh"));
 
         HBox statusLine = new HBox(8, statusDot, statusLabel, refreshButton);
@@ -167,8 +170,7 @@ public final class CofeMinePane extends VBox {
         StackPane.setAlignment(collapsedPane, Pos.TOP_RIGHT);
         getChildren().setAll(container);
 
-        statusService.statusProperty().addListener((obs, oldVal, newVal) -> updateStatus(newVal));
-        updateStatus(statusService.getStatus());
+        rebuildStatusService();
         updateModpackState();
 
         expanded.addListener((obs, oldVal, newVal) -> togglePane(newVal));
@@ -179,7 +181,8 @@ public final class CofeMinePane extends VBox {
             openFolderButton.setDisable(newVal || resolveInstancePath().isEmpty());
         });
 
-        statusService.start();
+        config().cofemineServerHostProperty().addListener(serverListener);
+        config().cofemineServerPortProperty().addListener(serverListener);
     }
 
     private void updateStatus(CofeMineServerStatus status) {
@@ -211,6 +214,20 @@ public final class CofeMinePane extends VBox {
 
         String motd = status != null ? status.motd() : null;
         statusMotd.setText(motd == null || motd.isBlank() ? "" : i18n("cofemine.server.motd", motd));
+    }
+
+    private void rebuildStatusService() {
+        if (statusService != null) {
+            statusService.statusProperty().removeListener(statusListener);
+            statusService.close();
+        }
+
+        String host = StringUtils.defaultIfBlank(config().getCofemineServerHost(), "server.cofemine.ru");
+        int port = config().getCofemineServerPort() > 0 ? config().getCofemineServerPort() : 25565;
+        statusService = new CofeMineServerStatusService(host, port, Duration.ofSeconds(30));
+        statusService.statusProperty().addListener(statusListener);
+        updateStatus(statusService.getStatus());
+        statusService.start();
     }
 
     private void togglePane(boolean showExpanded) {

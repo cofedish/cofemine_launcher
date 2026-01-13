@@ -20,6 +20,7 @@ package org.jackhuang.hmcl.ui.main;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXRadioButton;
+import com.jfoenix.controls.JFXTextField;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.WeakInvalidationListener;
@@ -222,6 +223,51 @@ public final class SettingsPage extends ScrollPane {
                 previewPane.selectedProperty().addListener(checkUpdateListener);
 
                 settingsPane.getContent().add(previewPane);
+            }
+
+            {
+                ComponentSublist cofeminePane = new ComponentSublist();
+                cofeminePane.setTitle(i18n("cofemine.settings.title"));
+                cofeminePane.setHasSubtitle(true);
+                cofeminePane.setSubtitle(i18n("cofemine.settings.subtitle"));
+
+                VBox content = new VBox();
+                content.setSpacing(8);
+
+                BorderPane serverHostPane = new BorderPane();
+                Label serverHostLabel = new Label(i18n("cofemine.settings.server_host"));
+                serverHostPane.setLeft(serverHostLabel);
+                JFXTextField serverHostField = new JFXTextField();
+                serverHostField.setPromptText(i18n("cofemine.settings.server_host.hint"));
+                FXUtils.setLimitWidth(serverHostField, 300);
+                FXUtils.bindString(serverHostField, config().cofemineServerHostProperty());
+                serverHostPane.setRight(serverHostField);
+                BorderPane.setAlignment(serverHostField, Pos.CENTER_RIGHT);
+
+                BorderPane serverPortPane = new BorderPane();
+                Label serverPortLabel = new Label(i18n("cofemine.settings.server_port"));
+                serverPortPane.setLeft(serverPortLabel);
+                JFXTextField serverPortField = new JFXTextField();
+                serverPortField.setPromptText("25565");
+                FXUtils.setLimitWidth(serverPortField, 120);
+                FXUtils.bindInt(serverPortField, config().cofemineServerPortProperty());
+                serverPortPane.setRight(serverPortField);
+                BorderPane.setAlignment(serverPortField, Pos.CENTER_RIGHT);
+
+                BorderPane modpackUrlPane = new BorderPane();
+                Label modpackUrlLabel = new Label(i18n("cofemine.settings.modpack_url"));
+                modpackUrlPane.setLeft(modpackUrlLabel);
+                JFXTextField modpackUrlField = new JFXTextField();
+                modpackUrlField.setPromptText(i18n("cofemine.settings.modpack_url.hint"));
+                FXUtils.setLimitWidth(modpackUrlField, 420);
+                FXUtils.bindString(modpackUrlField, config().cofemineModpackZipUrlProperty());
+                modpackUrlPane.setRight(modpackUrlField);
+                BorderPane.setAlignment(modpackUrlField, Pos.CENTER_RIGHT);
+
+                content.getChildren().setAll(serverHostPane, serverPortPane, modpackUrlPane);
+                cofeminePane.getContent().add(content);
+
+                settingsPane.getContent().add(cofeminePane);
             }
 
             {

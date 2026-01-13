@@ -38,6 +38,7 @@ val versionType = System.getenv("VERSION_TYPE")
 base {
     archivesName.set("CofeMine-Launcher")
 }
+val executableBaseName = "CofeMine-Launcher"
 val versionRoot = System.getenv("VERSION_ROOT") ?: projectConfig.getProperty("versionRoot") ?: "3"
 
 val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""
@@ -280,14 +281,14 @@ val makeExecutables by tasks.registering {
     dependsOn(tasks.jar)
 
     inputs.file(jarPath)
-    outputs.files(extensions.map { File(jarPath.parentFile, jarPath.nameWithoutExtension + '.' + it) })
+    outputs.files(extensions.map { File(jarPath.parentFile, "$executableBaseName.$it") })
 
     doLast {
         val jarContent = jarPath.readBytes()
 
         ZipFile(jarPath).use { zipFile ->
             for (extension in extensions) {
-                val output = File(jarPath.parentFile, jarPath.nameWithoutExtension + '.' + extension)
+                val output = File(jarPath.parentFile, "$executableBaseName.$extension")
                 val entry = zipFile.getEntry("assets/HMCLauncher.$extension")
                     ?: throw GradleException("HMCLauncher.$extension not found")
 
