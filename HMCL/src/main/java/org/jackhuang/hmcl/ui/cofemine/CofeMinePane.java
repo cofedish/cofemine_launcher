@@ -69,6 +69,8 @@ public final class CofeMinePane extends VBox {
     private final JFXButton modpackButton = new JFXButton();
     private final JFXButton openFolderButton = new JFXButton(i18n("cofemine.modpack.open_folder"));
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    private final BooleanProperty expanded = new SimpleBooleanProperty(true);
+    private final JFXButton collapseButton = new JFXButton();
 
     public CofeMinePane() {
         getStyleClass().addAll("card", "cofemine-panel");
@@ -79,6 +81,14 @@ public final class CofeMinePane extends VBox {
         subtitle.getStyleClass().add("cofemine-subtitle");
 
         VBox header = new VBox(2, title, subtitle);
+
+        collapseButton.getStyleClass().addAll("toggle-icon-tiny", "cofemine-collapse-button");
+        updateCollapseIcon();
+        collapseButton.setOnAction(event -> expanded.set(!expanded.get()));
+
+        HBox headerLine = new HBox(8, header, collapseButton);
+        headerLine.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(header, Priority.ALWAYS);
 
         JFXButton refreshButton = new JFXButton();
         refreshButton.getStyleClass().add("toggle-icon-tiny");
@@ -120,11 +130,21 @@ public final class CofeMinePane extends VBox {
         VBox modpackBox = new VBox(6, modpackTitle, modpackPathLabel, actionBox);
         modpackBox.setPadding(new Insets(4, 0, 0, 0));
 
-        getChildren().setAll(header, statusBox, modpackBox);
+        VBox contentBox = new VBox(10, statusBox, modpackBox);
+
+        getChildren().setAll(headerLine, contentBox);
 
         statusService.statusProperty().addListener((obs, oldVal, newVal) -> updateStatus(newVal));
         updateStatus(statusService.getStatus());
         updateModpackState();
+
+        expanded.addListener((obs, oldVal, newVal) -> {
+            contentBox.setVisible(newVal);
+            contentBox.setManaged(newVal);
+            updateCollapseIcon();
+        });
+        contentBox.setVisible(expanded.get());
+        contentBox.setManaged(expanded.get());
 
         busy.addListener((obs, oldVal, newVal) -> {
             modpackButton.setDisable(newVal);
@@ -141,8 +161,10 @@ public final class CofeMinePane extends VBox {
             statusDot.getStyleClass().add("online");
             statusLabel.setText(i18n("cofemine.server.online"));
         } else if (status != null && "loading".equals(status.error())) {
+            statusDot.getStyleClass().add("pending");
             statusLabel.setText(i18n("cofemine.server.loading"));
         } else {
+            statusDot.getStyleClass().add("offline");
             statusLabel.setText(i18n("cofemine.server.offline"));
         }
 
@@ -161,6 +183,12 @@ public final class CofeMinePane extends VBox {
 
         String motd = status != null ? status.motd() : null;
         statusMotd.setText(motd == null || motd.isBlank() ? "" : i18n("cofemine.server.motd", motd));
+    }
+
+    private void updateCollapseIcon() {
+        collapseButton.setGraphic(expanded.get()
+                ? SVG.ARROW_DROP_UP.createIcon(16)
+                : SVG.ARROW_DROP_DOWN.createIcon(16));
     }
 
     private void updateModpackState() {

@@ -496,11 +496,23 @@
 }
 
 .cofemine-status-dot {
-    -fx-fill: -monet-error;
+    -fx-fill: #9e9e9e;
 }
 
 .cofemine-status-dot.online {
-    -fx-fill: -monet-primary;
+    -fx-fill: #2e7d32;
+}
+
+.cofemine-status-dot.offline {
+    -fx-fill: #c62828;
+}
+
+.cofemine-status-dot.pending {
+    -fx-fill: #9e9e9e;
+}
+
+.cofemine-collapse-button .svg {
+    -fx-fill: -monet-on-surface-variant;
 }
 
 .cofemine-action-button {
