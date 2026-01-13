@@ -223,7 +223,9 @@ public final class CofeMinePane extends VBox {
             statusService.close();
         }
 
-        String host = StringUtils.defaultIfBlank(config().getCofemineServerHost(), "server.cofemine.ru");
+        String host = StringUtils.isBlank(config().getCofemineServerHost())
+                ? "server.cofemine.ru"
+                : config().getCofemineServerHost();
         int port = config().getCofemineServerPort() > 0 ? config().getCofemineServerPort() : 25565;
         statusService = new CofeMineServerStatusService(host, port, Duration.ofSeconds(30));
         statusService.statusProperty().addListener(statusListener);

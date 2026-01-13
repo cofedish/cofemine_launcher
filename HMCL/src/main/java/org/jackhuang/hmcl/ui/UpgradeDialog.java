@@ -20,6 +20,7 @@ package org.jackhuang.hmcl.ui;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXDialogLayout;
 import com.jfoenix.controls.JFXSpinner;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
@@ -35,7 +36,6 @@ import org.jackhuang.hmcl.util.io.HttpRequest;
 import org.jackhuang.hmcl.util.versioning.VersionNumber;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Node;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -67,7 +67,7 @@ public final class UpgradeDialog extends JFXDialogLayout {
                 return null;
 
             Document document = Jsoup.parse(new URL(url), 30 * 1000);
-            Node node = document.selectFirst("h1[data-version=\"%s\"]".formatted(targetVersion));
+            org.jsoup.nodes.Node node = document.selectFirst("h1[data-version=\"%s\"]".formatted(targetVersion));
 
             if (node == null || !"h1".equals(node.nodeName())) {
                 LOG.warning("Changelog not found, falling back to GitHub compare");
