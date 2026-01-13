@@ -36,10 +36,12 @@ jobs:
         with:
           cache-cleanup: never
       - name: Prepare signing key
-        if: ${{ secrets.HMCL_SIGNATURE_KEY_B64 != '' }}
         shell: bash
         run: |
-          echo "${{ secrets.HMCL_SIGNATURE_KEY_B64 }}" | base64 -d > "$RUNNER_TEMP/hmcl-sign.key"
+          if [ -n "${{ secrets.HMCL_SIGNATURE_KEY_B64 }}" ]; then
+            echo "${{ secrets.HMCL_SIGNATURE_KEY_B64 }}" | base64 -d > "$RUNNER_TEMP/hmcl-sign.key"
+            echo "HMCL_SIGNATURE_KEY=$RUNNER_TEMP/hmcl-sign.key" >> "$GITHUB_ENV"
+          fi
       - name: Build with Gradle
         run: ./gradlew build --no-daemon --parallel
         env:
@@ -47,7 +49,6 @@ jobs:
           MICROSOFT_AUTH_SECRET: ${{ secrets.MICROSOFT_AUTH_SECRET }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           HMCL_LAUNCHER_EXE: tools/HMCLauncher.exe
-          HMCL_SIGNATURE_KEY: ${{ runner.temp }}/hmcl-sign.key
       - name: Generate update metadata
         shell: bash
         run: |
