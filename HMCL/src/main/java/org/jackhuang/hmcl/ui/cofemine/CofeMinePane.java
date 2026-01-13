@@ -18,7 +18,6 @@
 package org.jackhuang.hmcl.ui.cofemine;
 
 import com.jfoenix.controls.JFXButton;
-import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -255,23 +254,23 @@ public final class CofeMinePane extends VBox {
 
             animation.getKeyFrames().addAll(
                     new KeyFrame(javafx.util.Duration.ZERO,
-                            new KeyValue(expandedPane.opacityProperty(), 0, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateXProperty(), shiftX, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateYProperty(), -shiftY, Interpolator.SINE),
-                            new KeyValue(collapsedPane.opacityProperty(), 1, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE)),
+                            new KeyValue(expandedPane.opacityProperty(), 0, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), shiftX, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), -shiftY, FXUtils.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 1, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, FXUtils.SINE)),
                     new KeyFrame(TOGGLE_DURATION,
-                            new KeyValue(expandedPane.opacityProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleXProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleYProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateXProperty(), 0, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateYProperty(), 0, Interpolator.SINE),
-                            new KeyValue(collapsedPane.opacityProperty(), 0, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleXProperty(), 1, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleYProperty(), 1, Interpolator.SINE))
+                            new KeyValue(expandedPane.opacityProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), 0, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), 0, FXUtils.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 0, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), 1, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), 1, FXUtils.SINE))
             );
             animation.setOnFinished(event -> {
                 collapsedPane.setVisible(false);
@@ -290,23 +289,23 @@ public final class CofeMinePane extends VBox {
 
             animation.getKeyFrames().addAll(
                     new KeyFrame(javafx.util.Duration.ZERO,
-                            new KeyValue(expandedPane.opacityProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleXProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleYProperty(), 1, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateXProperty(), 0, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateYProperty(), 0, Interpolator.SINE),
-                            new KeyValue(collapsedPane.opacityProperty(), 0, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE)),
+                            new KeyValue(expandedPane.opacityProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), 1, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), 0, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), 0, FXUtils.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 0, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, FXUtils.SINE)),
                     new KeyFrame(TOGGLE_DURATION,
-                            new KeyValue(expandedPane.opacityProperty(), 0, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, Interpolator.SINE),
-                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateXProperty(), shiftX, Interpolator.SINE),
-                            new KeyValue(expandedPane.translateYProperty(), -shiftY, Interpolator.SINE),
-                            new KeyValue(collapsedPane.opacityProperty(), 1, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleXProperty(), 1, Interpolator.SINE),
-                            new KeyValue(collapsedPane.scaleYProperty(), 1, Interpolator.SINE))
+                            new KeyValue(expandedPane.opacityProperty(), 0, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, FXUtils.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), shiftX, FXUtils.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), -shiftY, FXUtils.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 1, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), 1, FXUtils.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), 1, FXUtils.SINE))
             );
             animation.setOnFinished(event -> {
                 expandedPane.setVisible(false);
