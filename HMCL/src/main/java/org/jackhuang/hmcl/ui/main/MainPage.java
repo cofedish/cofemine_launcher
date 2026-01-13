@@ -274,8 +274,8 @@ public final class MainPage extends StackPane implements DecoratorPage {
 
         CofeMinePane cofeminePane = new CofeMinePane();
         FXUtils.setLimitWidth(cofeminePane, 320);
-        StackPane.setAlignment(cofeminePane, Pos.TOP_LEFT);
-        StackPane.setMargin(cofeminePane, new Insets(12, 0, 0, 0));
+        StackPane.setAlignment(cofeminePane, Pos.TOP_RIGHT);
+        StackPane.setMargin(cofeminePane, new Insets(12, 12, 0, 0));
 
         getChildren().addAll(cofeminePane, updatePane, launchPane);
 

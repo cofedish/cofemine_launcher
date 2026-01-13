@@ -516,11 +516,8 @@
 }
 
 .cofemine-panel-collapsed {
-    -fx-background-color: -monet-surface-container-low-transparent-80;
-    -fx-background-radius: 12;
-    -fx-padding: 10;
-    -fx-alignment: center;
-    -fx-cursor: hand;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
 }
 
 .cofemine-action-button {

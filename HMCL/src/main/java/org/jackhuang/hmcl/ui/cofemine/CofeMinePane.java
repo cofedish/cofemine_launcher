@@ -18,14 +18,21 @@
 package org.jackhuang.hmcl.ui.cofemine;
 
 import com.jfoenix.controls.JFXButton;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.DirectoryChooser;
@@ -38,6 +45,7 @@ import org.jackhuang.hmcl.task.TaskListener;
 import org.jackhuang.hmcl.ui.Controllers;
 import org.jackhuang.hmcl.ui.FXUtils;
 import org.jackhuang.hmcl.ui.SVG;
+import org.jackhuang.hmcl.ui.animation.AnimationUtils;
 import org.jackhuang.hmcl.ui.construct.MessageDialogPane;
 import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.TaskCancellationAction;
@@ -56,7 +64,11 @@ public final class CofeMinePane extends VBox {
     private static final String SITE_URL = "https://cofemine.ru";
     private static final String SERVER_HOST = "server.cofemine.ru";
     private static final int SERVER_PORT = 25565;
-    private static final String LOGO_PATH = "/assets/img/icon.png";
+    private static final String LOGO_PATH = "/assets/img/icon@4x.png";
+    private static final double LOGO_SIZE = 28;
+    private static final double COLLAPSED_SCALE = 0.6;
+    private static final double COLLAPSED_LOGO_SCALE = 0.85;
+    private static final javafx.util.Duration TOGGLE_DURATION = javafx.util.Duration.millis(240);
 
     private final CofeMineServerStatusService statusService = new CofeMineServerStatusService(
             SERVER_HOST, SERVER_PORT, Duration.ofSeconds(30));
@@ -71,6 +83,9 @@ public final class CofeMinePane extends VBox {
     private final JFXButton openFolderButton = new JFXButton(i18n("cofemine.modpack.open_folder"));
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty expanded = new SimpleBooleanProperty(true);
+    private final VBox expandedPane;
+    private final StackPane collapsedPane;
+    private boolean toggleInitialized = false;
 
     public CofeMinePane() {
         Label title = new Label(i18n("cofemine.panel.title"));
@@ -80,12 +95,13 @@ public final class CofeMinePane extends VBox {
 
         VBox header = new VBox(2, title, subtitle);
 
-        var headerLogo = FXUtils.newBuiltinImage(LOGO_PATH);
-        var headerIcon = new javafx.scene.image.ImageView(headerLogo);
+        var headerLogo = FXUtils.newBuiltinImage(LOGO_PATH, 24, 24, true, true);
+        var headerIcon = new ImageView(headerLogo);
         headerIcon.setFitWidth(24);
         headerIcon.setFitHeight(24);
         headerIcon.setPreserveRatio(true);
         headerIcon.getStyleClass().add("cofemine-collapse-logo");
+        headerIcon.setCursor(Cursor.HAND);
         headerIcon.setOnMouseClicked(event -> expanded.set(false));
 
         HBox headerLine = new HBox(8, header, headerIcon);
@@ -132,34 +148,32 @@ public final class CofeMinePane extends VBox {
         VBox modpackBox = new VBox(6, modpackTitle, modpackPathLabel, actionBox);
         modpackBox.setPadding(new Insets(4, 0, 0, 0));
 
-        VBox expandedPane = new VBox(10, headerLine, statusBox, modpackBox);
+        expandedPane = new VBox(10, headerLine, statusBox, modpackBox);
         expandedPane.getStyleClass().addAll("card", "cofemine-panel");
 
-        var collapsedIcon = new javafx.scene.image.ImageView(FXUtils.newBuiltinImage(LOGO_PATH));
-        collapsedIcon.setFitWidth(64);
-        collapsedIcon.setFitHeight(64);
+        var collapsedIcon = new ImageView(FXUtils.newBuiltinImage(LOGO_PATH, LOGO_SIZE, LOGO_SIZE, true, true));
+        collapsedIcon.setFitWidth(LOGO_SIZE);
+        collapsedIcon.setFitHeight(LOGO_SIZE);
         collapsedIcon.setPreserveRatio(true);
+        collapsedIcon.setCursor(Cursor.HAND);
+        collapsedIcon.setOnMouseClicked(event -> expanded.set(true));
 
-        var collapsedPane = new javafx.scene.layout.StackPane(collapsedIcon);
-        collapsedPane.getStyleClass().addAll("card", "cofemine-panel-collapsed");
-        collapsedPane.setOnMouseClicked(event -> expanded.set(true));
+        collapsedPane = new StackPane(collapsedIcon);
+        collapsedPane.getStyleClass().add("cofemine-panel-collapsed");
+        StackPane.setAlignment(collapsedIcon, Pos.TOP_RIGHT);
+        collapsedPane.setPickOnBounds(false);
 
-        getChildren().setAll(expandedPane, collapsedPane);
+        StackPane container = new StackPane(expandedPane, collapsedPane);
+        StackPane.setAlignment(expandedPane, Pos.TOP_RIGHT);
+        StackPane.setAlignment(collapsedPane, Pos.TOP_RIGHT);
+        getChildren().setAll(container);
 
         statusService.statusProperty().addListener((obs, oldVal, newVal) -> updateStatus(newVal));
         updateStatus(statusService.getStatus());
         updateModpackState();
 
-        expanded.addListener((obs, oldVal, newVal) -> {
-            expandedPane.setVisible(newVal);
-            expandedPane.setManaged(newVal);
-            collapsedPane.setVisible(!newVal);
-            collapsedPane.setManaged(!newVal);
-        });
-        expandedPane.setVisible(expanded.get());
-        expandedPane.setManaged(expanded.get());
-        collapsedPane.setVisible(!expanded.get());
-        collapsedPane.setManaged(!expanded.get());
+        expanded.addListener((obs, oldVal, newVal) -> togglePane(newVal));
+        togglePane(expanded.get());
 
         busy.addListener((obs, oldVal, newVal) -> {
             modpackButton.setDisable(newVal);
@@ -198,6 +212,109 @@ public final class CofeMinePane extends VBox {
 
         String motd = status != null ? status.motd() : null;
         statusMotd.setText(motd == null || motd.isBlank() ? "" : i18n("cofemine.server.motd", motd));
+    }
+
+    private void togglePane(boolean showExpanded) {
+        if (!toggleInitialized || !AnimationUtils.isAnimationEnabled()) {
+            expandedPane.setVisible(showExpanded);
+            expandedPane.setManaged(showExpanded);
+            collapsedPane.setVisible(!showExpanded);
+            collapsedPane.setManaged(!showExpanded);
+            toggleInitialized = true;
+            return;
+        }
+
+        toggleInitialized = true;
+        expandedPane.setManaged(true);
+        expandedPane.setVisible(true);
+        collapsedPane.setManaged(true);
+        collapsedPane.setVisible(true);
+
+        double panelWidth = getWidth() > 0 ? getWidth() : getPrefWidth();
+        if (panelWidth <= 0) {
+            panelWidth = 320;
+        }
+        double panelHeight = expandedPane.getHeight() > 0 ? expandedPane.getHeight() : expandedPane.prefHeight(-1);
+        if (panelHeight <= 0) {
+            panelHeight = 200;
+        }
+        double shiftX = panelWidth * (1 - COLLAPSED_SCALE) / 2;
+        double shiftY = panelHeight * (1 - COLLAPSED_SCALE) / 2;
+
+        Timeline animation = new Timeline();
+        if (showExpanded) {
+            expandedPane.setOpacity(0);
+            expandedPane.setScaleX(COLLAPSED_SCALE);
+            expandedPane.setScaleY(COLLAPSED_SCALE);
+            expandedPane.setTranslateX(shiftX);
+            expandedPane.setTranslateY(-shiftY);
+
+            collapsedPane.setOpacity(1);
+            collapsedPane.setScaleX(COLLAPSED_LOGO_SCALE);
+            collapsedPane.setScaleY(COLLAPSED_LOGO_SCALE);
+
+            animation.getKeyFrames().addAll(
+                    new KeyFrame(javafx.util.Duration.ZERO,
+                            new KeyValue(expandedPane.opacityProperty(), 0, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), shiftX, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), -shiftY, Interpolator.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 1, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE)),
+                    new KeyFrame(TOGGLE_DURATION,
+                            new KeyValue(expandedPane.opacityProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), 0, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), 0, Interpolator.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 0, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), 1, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), 1, Interpolator.SINE))
+            );
+            animation.setOnFinished(event -> {
+                collapsedPane.setVisible(false);
+                collapsedPane.setManaged(false);
+            });
+        } else {
+            expandedPane.setOpacity(1);
+            expandedPane.setScaleX(1);
+            expandedPane.setScaleY(1);
+            expandedPane.setTranslateX(0);
+            expandedPane.setTranslateY(0);
+
+            collapsedPane.setOpacity(0);
+            collapsedPane.setScaleX(COLLAPSED_LOGO_SCALE);
+            collapsedPane.setScaleY(COLLAPSED_LOGO_SCALE);
+
+            animation.getKeyFrames().addAll(
+                    new KeyFrame(javafx.util.Duration.ZERO,
+                            new KeyValue(expandedPane.opacityProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), 1, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), 0, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), 0, Interpolator.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 0, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), COLLAPSED_LOGO_SCALE, Interpolator.SINE)),
+                    new KeyFrame(TOGGLE_DURATION,
+                            new KeyValue(expandedPane.opacityProperty(), 0, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleXProperty(), COLLAPSED_SCALE, Interpolator.SINE),
+                            new KeyValue(expandedPane.scaleYProperty(), COLLAPSED_SCALE, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateXProperty(), shiftX, Interpolator.SINE),
+                            new KeyValue(expandedPane.translateYProperty(), -shiftY, Interpolator.SINE),
+                            new KeyValue(collapsedPane.opacityProperty(), 1, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleXProperty(), 1, Interpolator.SINE),
+                            new KeyValue(collapsedPane.scaleYProperty(), 1, Interpolator.SINE))
+            );
+            animation.setOnFinished(event -> {
+                expandedPane.setVisible(false);
+                expandedPane.setManaged(false);
+            });
+        }
+
+        FXUtils.playAnimation(this, "cofemine-toggle", animation);
     }
 
     private void updateModpackState() {
