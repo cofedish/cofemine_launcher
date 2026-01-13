@@ -231,7 +231,10 @@ public final class CofeMineModpackService {
             writeMarker(targetDir, manifest, zipUrl, manifestUrl);
         });
 
-        Task<Void> sequence = new CofeMineModpackTask(List.of(downloadTask, unpackTask, syncTask, markerTask));
+        Task<Void> sequence = downloadTask
+                .thenComposeAsync(unpackTask)
+                .thenComposeAsync(syncTask)
+                .thenComposeAsync(markerTask);
         return sequence.whenComplete(Schedulers.io(), exception -> FileUtils.deleteDirectoryQuietly(workDir));
     }
 
@@ -277,6 +280,9 @@ public final class CofeMineModpackService {
     }
 
     private static void unpackArchive(Path archivePath, Path extractDir) throws IOException {
+        if (!Files.isRegularFile(archivePath)) {
+            throw new IOException("Downloaded modpack archive not found: " + archivePath);
+        }
         ArchiveType type = detectArchiveType(archivePath);
         if (type == ArchiveType.RAR) {
             unpackRar(archivePath, extractDir);
@@ -375,24 +381,6 @@ public final class CofeMineModpackService {
         ZIP,
         RAR,
         UNKNOWN
-    }
-
-    private static final class CofeMineModpackTask extends Task<Void> {
-        private final List<Task<?>> dependents;
-
-        private CofeMineModpackTask(List<Task<?>> dependents) {
-            this.dependents = dependents;
-        }
-
-        @Override
-        public void execute() {
-            setResult(null);
-        }
-
-        @Override
-        public List<Task<?>> getDependents() {
-            return dependents;
-        }
     }
 
     private record CofeMineModpackMarker(
