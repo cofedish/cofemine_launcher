@@ -50,7 +50,7 @@ public final class UpgradeDialog extends JFXDialogLayout {
         setHeading(new Label(i18n("update.changelog")));
         setBody(new JFXSpinner());
 
-        String url = CHANGELOG_URL + remoteVersion.getChannel().channelName + ".html";
+        String url = CHANGELOG_URL + ".html";
 
         Task.supplyAsync(Schedulers.io(), () -> {
             VersionNumber targetVersion = VersionNumber.asVersion(remoteVersion.getVersion());

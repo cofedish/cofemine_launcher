@@ -56,6 +56,7 @@ public final class CofeMinePane extends VBox {
     private static final String SITE_URL = "https://cofemine.ru";
     private static final String SERVER_HOST = "server.cofemine.ru";
     private static final int SERVER_PORT = 25565;
+    private static final String LOGO_PATH = "/assets/img/icon.png";
 
     private final CofeMineServerStatusService statusService = new CofeMineServerStatusService(
             SERVER_HOST, SERVER_PORT, Duration.ofSeconds(30));
@@ -70,11 +71,8 @@ public final class CofeMinePane extends VBox {
     private final JFXButton openFolderButton = new JFXButton(i18n("cofemine.modpack.open_folder"));
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty expanded = new SimpleBooleanProperty(true);
-    private final JFXButton collapseButton = new JFXButton();
 
     public CofeMinePane() {
-        getStyleClass().addAll("card", "cofemine-panel");
-
         Label title = new Label(i18n("cofemine.panel.title"));
         title.getStyleClass().add("cofemine-title");
         Label subtitle = new Label(i18n("cofemine.panel.subtitle"));
@@ -82,11 +80,15 @@ public final class CofeMinePane extends VBox {
 
         VBox header = new VBox(2, title, subtitle);
 
-        collapseButton.getStyleClass().addAll("toggle-icon-tiny", "cofemine-collapse-button");
-        updateCollapseIcon();
-        collapseButton.setOnAction(event -> expanded.set(!expanded.get()));
+        var headerLogo = FXUtils.newBuiltinImage(LOGO_PATH);
+        var headerIcon = new javafx.scene.image.ImageView(headerLogo);
+        headerIcon.setFitWidth(24);
+        headerIcon.setFitHeight(24);
+        headerIcon.setPreserveRatio(true);
+        headerIcon.getStyleClass().add("cofemine-collapse-logo");
+        headerIcon.setOnMouseClicked(event -> expanded.set(false));
 
-        HBox headerLine = new HBox(8, header, collapseButton);
+        HBox headerLine = new HBox(8, header, headerIcon);
         headerLine.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(header, Priority.ALWAYS);
 
@@ -130,21 +132,34 @@ public final class CofeMinePane extends VBox {
         VBox modpackBox = new VBox(6, modpackTitle, modpackPathLabel, actionBox);
         modpackBox.setPadding(new Insets(4, 0, 0, 0));
 
-        VBox contentBox = new VBox(10, statusBox, modpackBox);
+        VBox expandedPane = new VBox(10, headerLine, statusBox, modpackBox);
+        expandedPane.getStyleClass().addAll("card", "cofemine-panel");
 
-        getChildren().setAll(headerLine, contentBox);
+        var collapsedIcon = new javafx.scene.image.ImageView(FXUtils.newBuiltinImage(LOGO_PATH));
+        collapsedIcon.setFitWidth(64);
+        collapsedIcon.setFitHeight(64);
+        collapsedIcon.setPreserveRatio(true);
+
+        var collapsedPane = new javafx.scene.layout.StackPane(collapsedIcon);
+        collapsedPane.getStyleClass().addAll("card", "cofemine-panel-collapsed");
+        collapsedPane.setOnMouseClicked(event -> expanded.set(true));
+
+        getChildren().setAll(expandedPane, collapsedPane);
 
         statusService.statusProperty().addListener((obs, oldVal, newVal) -> updateStatus(newVal));
         updateStatus(statusService.getStatus());
         updateModpackState();
 
         expanded.addListener((obs, oldVal, newVal) -> {
-            contentBox.setVisible(newVal);
-            contentBox.setManaged(newVal);
-            updateCollapseIcon();
+            expandedPane.setVisible(newVal);
+            expandedPane.setManaged(newVal);
+            collapsedPane.setVisible(!newVal);
+            collapsedPane.setManaged(!newVal);
         });
-        contentBox.setVisible(expanded.get());
-        contentBox.setManaged(expanded.get());
+        expandedPane.setVisible(expanded.get());
+        expandedPane.setManaged(expanded.get());
+        collapsedPane.setVisible(!expanded.get());
+        collapsedPane.setManaged(!expanded.get());
 
         busy.addListener((obs, oldVal, newVal) -> {
             modpackButton.setDisable(newVal);
@@ -183,12 +198,6 @@ public final class CofeMinePane extends VBox {
 
         String motd = status != null ? status.motd() : null;
         statusMotd.setText(motd == null || motd.isBlank() ? "" : i18n("cofemine.server.motd", motd));
-    }
-
-    private void updateCollapseIcon() {
-        collapseButton.setGraphic(expanded.get()
-                ? SVG.ARROW_DROP_UP.createIcon(16)
-                : SVG.ARROW_DROP_DOWN.createIcon(16));
     }
 
     private void updateModpackState() {

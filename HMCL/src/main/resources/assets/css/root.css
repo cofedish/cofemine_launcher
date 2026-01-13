@@ -511,8 +511,16 @@
     -fx-fill: #9e9e9e;
 }
 
-.cofemine-collapse-button .svg {
-    -fx-fill: -monet-on-surface-variant;
+.cofemine-collapse-logo {
+    -fx-cursor: hand;
+}
+
+.cofemine-panel-collapsed {
+    -fx-background-color: -monet-surface-container-low-transparent-80;
+    -fx-background-radius: 12;
+    -fx-padding: 10;
+    -fx-alignment: center;
+    -fx-cursor: hand;
 }
 
 .cofemine-action-button {
