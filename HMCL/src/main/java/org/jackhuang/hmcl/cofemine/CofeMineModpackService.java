@@ -19,10 +19,21 @@ package org.jackhuang.hmcl.cofemine;
 
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
+import com.github.junrar.exception.UnsupportedRarV5Exception;
 import com.github.junrar.rarfile.FileHeader;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import net.sf.sevenzipjbinding.ExtractAskMode;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import org.jackhuang.hmcl.setting.Profile;
 import org.jackhuang.hmcl.setting.Profiles;
 import org.jackhuang.hmcl.task.FileDownloadTask;
@@ -38,6 +49,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -333,8 +345,115 @@ public final class CofeMineModpackService {
                     archive.extractFile(header, out);
                 }
             }
+        } catch (UnsupportedRarV5Exception e) {
+            unpackRarWithSevenZip(archivePath, extractDir);
         } catch (RarException e) {
             throw new IOException("Failed to unpack RAR archive", e);
+        }
+    }
+
+    private static void unpackRarWithSevenZip(Path archivePath, Path extractDir) throws IOException {
+        try {
+            SevenZip.initSevenZipFromPlatformJAR();
+        } catch (SevenZipNativeInitializationException e) {
+            throw new IOException("Failed to initialize 7zip native library", e);
+        }
+
+        final IInArchive[] archiveRef = new IInArchive[1];
+        try (RandomAccessFile raf = new RandomAccessFile(archivePath.toFile(), "r")) {
+            archiveRef[0] = SevenZip.openInArchive(null, new RandomAccessFileInStream(raf));
+            int items = archiveRef[0].getNumberOfItems();
+            int[] indices = new int[items];
+            for (int i = 0; i < items; i++) {
+                indices[i] = i;
+            }
+            archiveRef[0].extract(indices, false, new IArchiveExtractCallback() {
+                private OutputStream currentStream;
+
+                @Override
+                public ISequentialOutStream getStream(int index, ExtractAskMode extractAskMode) throws SevenZipException {
+                    if (extractAskMode != ExtractAskMode.EXTRACT) {
+                        return null;
+                    }
+
+                    Object isFolderValue = archiveRef[0].getProperty(index, PropID.IS_FOLDER);
+                    boolean isFolder = Boolean.TRUE.equals(isFolderValue);
+                    Object pathValue = archiveRef[0].getProperty(index, PropID.PATH);
+                    if (pathValue == null) {
+                        return null;
+                    }
+                    String path = pathValue.toString();
+                    if (StringUtils.isBlank(path) || "null".equals(path)) {
+                        return null;
+                    }
+                    path = path.replace('\\', '/');
+                    Path output = extractDir.resolve(path).normalize();
+                    if (!output.startsWith(extractDir)) {
+                        return null;
+                    }
+                    if (isFolder) {
+                        try {
+                            Files.createDirectories(output);
+                        } catch (IOException e) {
+                            throw new SevenZipException("Failed to create directory", e);
+                        }
+                        return null;
+                    }
+                    try {
+                        Files.createDirectories(output.getParent());
+                        currentStream = Files.newOutputStream(output);
+                    } catch (IOException e) {
+                        throw new SevenZipException("Failed to open output file", e);
+                    }
+
+                    return data -> {
+                        try {
+                            currentStream.write(data);
+                        } catch (IOException e) {
+                            throw new SevenZipException("Failed to write output", e);
+                        }
+                        return data.length;
+                    };
+                }
+
+                @Override
+                public void prepareOperation(ExtractAskMode extractAskMode) {
+                }
+
+                @Override
+                public void setOperationResult(ExtractOperationResult extractOperationResult) throws SevenZipException {
+                    if (currentStream != null) {
+                        try {
+                            currentStream.close();
+                        } catch (IOException e) {
+                            throw new SevenZipException("Failed to close output file", e);
+                        } finally {
+                            currentStream = null;
+                        }
+                    }
+                    if (extractOperationResult != ExtractOperationResult.OK) {
+                        throw new SevenZipException("Extraction failed: " + extractOperationResult);
+                    }
+                }
+
+                @Override
+                public void setCompleted(long completeValue) {
+                }
+
+                @Override
+                public void setTotal(long total) {
+                }
+            });
+        } catch (SevenZipException e) {
+            throw new IOException("Failed to unpack RAR archive", e);
+        } finally {
+            if (archiveRef[0] != null) {
+                try {
+                    archiveRef[0].close();
+                } catch (SevenZipException e) {
+                    LOG.warning("Failed to close 7zip archive", e);
+                }
+            }
         }
     }
 

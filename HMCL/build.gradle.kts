@@ -82,6 +82,8 @@ dependencies {
     implementation(libs.java.info)
     implementation(libs.monet.fx)
     implementation(libs.junrar)
+    implementation("net.sf.sevenzipjbinding:sevenzipjbinding:16.02-2.01")
+    implementation("net.sf.sevenzipjbinding:sevenzipjbinding-all-platforms:16.02-2.01")
 
     if (launcherExeFile == null) {
         implementation(libs.hmclauncher)
@@ -222,6 +224,8 @@ tasks.shadowJar {
         exclude(dependency("com.google.code.gson:.*:.*"))
         exclude(dependency("net.java.dev.jna:jna:.*"))
         exclude(dependency("libs:JFoenix:.*"))
+        exclude(dependency("net.sf.sevenzipjbinding:sevenzipjbinding:.*"))
+        exclude(dependency("net.sf.sevenzipjbinding:sevenzipjbinding-all-platforms:.*"))
         exclude(project(":HMCLBoot"))
     }
 
