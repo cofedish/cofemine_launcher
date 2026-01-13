@@ -1,4 +1,4 @@
-name: "Ошибка | Bug Report"
+﻿name: "Ошибка | Bug Report"
 description: "RU: Сообщить об ошибке в CofeMine Launcher. EN: File a bug report for CofeMine Launcher."
 title: "[Bug] "
 labels: ["bug"]
@@ -6,12 +6,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        RU: Перед отправкой проверьте, что это ошибка лаунчера, а не краш Minecraft. Если падает игра, сначала изучите логи игры/модов.
-        RU: Нужна помощь? Присоединяйтесь:
+        RU: Перед отправкой убедитесь, что это ошибка лаунчера, а не краш Minecraft. Если падает игра — сначала проверьте логи игры/модов.
+        RU: Нужна помощь? Напишите нам:
         - Telegram: https://t.me/+rfvGU6sDSvEwZDgy
         - Discord: https://discord.gg/zyKM2XAnXW
 
-        EN: Before submitting, confirm it is a launcher bug, not a Minecraft crash. If the game crashes, check game/mod logs first.
+        EN: Please confirm this is a launcher bug, not a Minecraft crash. If the game crashes, check game/mod logs first.
         EN: Need help? Join:
         - Telegram: https://t.me/+rfvGU6sDSvEwZDgy
         - Discord: https://discord.gg/zyKM2XAnXW
@@ -19,15 +19,15 @@ body:
     id: summary
     attributes:
       label: "Кратко | Summary"
-      description: "RU: Что сломано и где. EN: What is broken and where."
-      placeholder: "RU: Кнопка «Играть» не запускает игру... / EN: The Play button does nothing..."
+      description: "RU: Что сломалось и где. EN: What is broken and where."
+      placeholder: "RU: Кнопка Играть не реагирует... / EN: Play button does nothing..."
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: "Шаги воспроизведения | Steps to reproduce"
-      description: "RU: Пошаговое описание. EN: Step-by-step."
+      label: "Шаги | Steps to reproduce"
+      description: "RU: Пошагово опишите, как повторить. EN: Step-by-step."
       placeholder: |
         1. ...
         2. ...
@@ -51,9 +51,9 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: "Логи / Crash report | Logs / Crash report"
+      label: "Логи / Crash report"
       description: |
-        RU: Приложите логи лаунчера или crash-report. Это критично для диагностики.
+        RU: Приложите логи лаунчера или crash-report. Это сильно ускорит диагностику.
         EN: Attach launcher logs or a crash report. This is critical for diagnosis.
     validations:
       required: true

@@ -1,4 +1,4 @@
-{
+﻿{
   "__comment__": "Run upgradeTerracottaConfig task with Gradle to resolve this template.",
 
   "version_latest": "@script_generated",
@@ -9,27 +9,33 @@
     "https://github.com/burningtnt/Terracotta/releases/download/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz"
   ],
   "downloads_CN": [
-    "https://gitee.com/burningtnt/Terracotta/releases/download/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz",
-    "https://cnb.cool/HMCL-Terracotta/Terracotta/-/releases/download/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz",
-    "https://alist.8mi.tech/d/mirror/HMCL-Terracotta/Auto/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz"
+    "https://gitee.com/burningtnt/Terracotta/releases/download/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz"
   ],
 
   "links": [
     {
       "desc": {
         "default": "GitHub Release",
-        "zh": "GitHub 发布页",
-        "zh-Hant": "GitHub 發布頁"
+        "zh": "GitHub Release",
+        "zh-Hant": "GitHub Release"
       },
       "link": "https://github.com/burningtnt/Terracotta/releases/tag/v${version}"
     },
     {
       "desc": {
-        "default": "Tencent QQ Group",
-        "zh": "QQ 群",
-        "zh-Hant": "QQ 群"
+        "default": "Telegram",
+        "zh": "Telegram",
+        "zh-Hant": "Telegram"
       },
-      "link": "https://qm.qq.com/cgi-bin/qm/qr?k=nIf5u5xQ3LXEP4ZEmLQtfjtpppjgHfI5&jump_from=webapi&authKey=sXStlPuGzhD1JyAhyExd2OwjzZkRf3x7bAEb/j1xNX1wrQcDdg71qPrhumIm6pyf"
+      "link": "https://t.me/+rfvGU6sDSvEwZDgy"
+    },
+    {
+      "desc": {
+        "default": "Discord",
+        "zh": "Discord",
+        "zh-Hant": "Discord"
+      },
+      "link": "https://discord.gg/zyKM2XAnXW"
     }
   ]
 }
