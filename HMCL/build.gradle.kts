@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.twelvemonkeys.imageio.webp)
     implementation(libs.java.info)
     implementation(libs.monet.fx)
+    implementation(libs.junrar)
 
     if (launcherExeFile == null) {
         implementation(libs.hmclauncher)

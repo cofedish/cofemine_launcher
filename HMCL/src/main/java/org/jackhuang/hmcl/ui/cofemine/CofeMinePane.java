@@ -54,7 +54,7 @@ import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
 public final class CofeMinePane extends VBox {
     private static final String SITE_URL = "https://cofemine.ru";
-    private static final String SERVER_HOST = "cofemine.online";
+    private static final String SERVER_HOST = "server.cofemine.ru";
     private static final int SERVER_PORT = 25565;
 
     private final CofeMineServerStatusService statusService = new CofeMineServerStatusService(

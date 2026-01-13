@@ -478,7 +478,7 @@ public final class Config extends ObservableSetting {
     }
 
     @SerializedName("cofemineModpackZipUrl")
-    private final StringProperty cofemineModpackZipUrl = new SimpleStringProperty("https://cofemine.ru/modpack/cofemine-pack.zip");
+    private final StringProperty cofemineModpackZipUrl = new SimpleStringProperty("https://disk.yandex.ru/d/56CWgbzQBsUIiw");
 
     public StringProperty cofemineModpackZipUrlProperty() {
         return cofemineModpackZipUrl;
@@ -493,7 +493,7 @@ public final class Config extends ObservableSetting {
     }
 
     @SerializedName("cofemineModpackManifestUrl")
-    private final StringProperty cofemineModpackManifestUrl = new SimpleStringProperty("https://cofemine.ru/modpack/manifest.json");
+    private final StringProperty cofemineModpackManifestUrl = new SimpleStringProperty("");
 
     public StringProperty cofemineModpackManifestUrlProperty() {
         return cofemineModpackManifestUrl;

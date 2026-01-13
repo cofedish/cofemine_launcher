@@ -17,6 +17,11 @@
  */
 package org.jackhuang.hmcl.cofemine;
 
+import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
+import com.github.junrar.rarfile.FileHeader;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import org.jackhuang.hmcl.setting.Profile;
 import org.jackhuang.hmcl.setting.Profiles;
@@ -31,6 +36,9 @@ import org.jackhuang.hmcl.util.io.Unzipper;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,6 +65,7 @@ public final class CofeMineModpackService {
             "defaultconfigs",
             "resourcepacks",
             "shaderpacks",
+            "shaders",
             "datapacks",
             "scripts"
     );
@@ -124,22 +133,27 @@ public final class CofeMineModpackService {
         Objects.requireNonNull(targetDir, "targetDir");
 
         Path workDir = Files.createTempDirectory("cofemine-modpack");
-        Path zipPath = workDir.resolve("cofemine-pack.zip");
+        String archiveName = resolveArchiveName(zipUrl);
+        Path archivePath = workDir.resolve(archiveName);
         Path extractDir = workDir.resolve("extract");
 
         FileDownloadTask.IntegrityCheck integrityCheck = manifest != null && StringUtils.isNotBlank(manifest.sha256())
                 ? new FileDownloadTask.IntegrityCheck("SHA-256", manifest.sha256())
                 : null;
 
-        FileDownloadTask downloadTask = new FileDownloadTask(zipUrl, zipPath, integrityCheck);
-        downloadTask.addIntegrityCheckHandler(FileDownloadTask.ZIP_INTEGRITY_CHECK_HANDLER);
-        downloadTask.setName("cofemine-pack.zip");
+        Task<String> resolveTask = Task.supplyAsync("CofeMine Resolve", Schedulers.io(), () -> resolveDownloadUrl(zipUrl));
 
-        Task<Void> unzipTask = Task.runAsync("CofeMine Unpack", Schedulers.io(), () -> {
-            new Unzipper(zipPath, extractDir)
-                    .setReplaceExistentFile(true)
-                    .unzip();
+        Task<Void> downloadTask = resolveTask.thenComposeAsync("CofeMine Download", Schedulers.io(), resolvedUrl -> {
+            String actualUrl = StringUtils.isBlank(resolvedUrl) ? zipUrl : resolvedUrl;
+            FileDownloadTask task = new FileDownloadTask(actualUrl, archivePath, integrityCheck);
+            if (looksLikeZip(actualUrl) || archiveName.toLowerCase(Locale.ROOT).endsWith(".zip")) {
+                task.addIntegrityCheckHandler(FileDownloadTask.ZIP_INTEGRITY_CHECK_HANDLER);
+            }
+            task.setName(archiveName);
+            return task;
         });
+
+        Task<Void> unpackTask = Task.runAsync("CofeMine Unpack", Schedulers.io(), () -> unpackArchive(archivePath, extractDir));
 
         Task<Void> syncTask = new Task<Void>() {
             @Override
@@ -217,8 +231,105 @@ public final class CofeMineModpackService {
             writeMarker(targetDir, manifest, zipUrl, manifestUrl);
         });
 
-        Task<Void> sequence = new CofeMineModpackTask(List.of(downloadTask, unzipTask, syncTask, markerTask));
+        Task<Void> sequence = new CofeMineModpackTask(List.of(downloadTask, unpackTask, syncTask, markerTask));
         return sequence.whenComplete(Schedulers.io(), exception -> FileUtils.deleteDirectoryQuietly(workDir));
+    }
+
+    private static String resolveArchiveName(String url) {
+        String extension = ".rar";
+        if (!StringUtils.isBlank(url)) {
+            String lower = url.toLowerCase(Locale.ROOT);
+            if (lower.contains(".zip")) {
+                extension = ".zip";
+            } else if (lower.contains(".rar")) {
+                extension = ".rar";
+            }
+        }
+        return "cofemine-pack" + extension;
+    }
+
+    private static boolean looksLikeZip(String url) {
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
+        String lower = url.toLowerCase(Locale.ROOT);
+        return lower.contains(".zip");
+    }
+
+    private static String resolveDownloadUrl(String url) throws IOException {
+        if (StringUtils.isBlank(url)) {
+            return url;
+        }
+        if (!isYandexDiskUrl(url)) {
+            return url;
+        }
+        String apiUrl = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key="
+                + URLEncoder.encode(url, StandardCharsets.UTF_8);
+        String json = HttpRequest.GET(apiUrl).getString();
+        JsonObject response = JsonUtils.fromNonNullJson(json, JsonObject.class);
+        JsonElement href = response.get("href");
+        return href != null ? href.getAsString() : url;
+    }
+
+    private static boolean isYandexDiskUrl(String url) {
+        String lower = url.toLowerCase(Locale.ROOT);
+        return lower.contains("disk.yandex.") || lower.contains("yadi.sk");
+    }
+
+    private static void unpackArchive(Path archivePath, Path extractDir) throws IOException {
+        ArchiveType type = detectArchiveType(archivePath);
+        if (type == ArchiveType.RAR) {
+            unpackRar(archivePath, extractDir);
+        } else {
+            new Unzipper(archivePath, extractDir)
+                    .setReplaceExistentFile(true)
+                    .unzip();
+        }
+    }
+
+    private static ArchiveType detectArchiveType(Path archivePath) throws IOException {
+        try (InputStream in = Files.newInputStream(archivePath)) {
+            byte[] header = in.readNBytes(8);
+            if (header.length >= 4
+                    && header[0] == 'P' && header[1] == 'K') {
+                return ArchiveType.ZIP;
+            }
+            if (header.length >= 7
+                    && header[0] == 'R' && header[1] == 'a' && header[2] == 'r' && header[3] == '!'
+                    && header[4] == 0x1A && header[5] == 0x07) {
+                return ArchiveType.RAR;
+            }
+        }
+        return ArchiveType.UNKNOWN;
+    }
+
+    private static void unpackRar(Path archivePath, Path extractDir) throws IOException {
+        try (Archive archive = new Archive(archivePath.toFile())) {
+            for (FileHeader header : archive.getFileHeaders()) {
+                String name = header.getFileNameW();
+                if (StringUtils.isBlank(name)) {
+                    name = header.getFileNameString();
+                }
+                if (StringUtils.isBlank(name)) {
+                    continue;
+                }
+                name = name.replace('\\', '/');
+                Path output = extractDir.resolve(name).normalize();
+                if (!output.startsWith(extractDir)) {
+                    continue;
+                }
+                if (header.isDirectory()) {
+                    Files.createDirectories(output);
+                    continue;
+                }
+                Files.createDirectories(output.getParent());
+                try (OutputStream out = Files.newOutputStream(output)) {
+                    archive.extractFile(header, out);
+                }
+            }
+        } catch (RarException e) {
+            throw new IOException("Failed to unpack RAR archive", e);
+        }
     }
 
     private static Path resolveContentRoot(Path extractDir) throws IOException {
@@ -258,6 +369,12 @@ public final class CofeMineModpackService {
     private enum Mode {
         INSTALL,
         UPDATE
+    }
+
+    private enum ArchiveType {
+        ZIP,
+        RAR,
+        UNKNOWN
     }
 
     private static final class CofeMineModpackTask extends Task<Void> {
