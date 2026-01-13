@@ -54,6 +54,7 @@ language-subtag-registry
 
 *.exe
 !tools/HMCLauncher.exe
+tools/hmcl-sign-private.key
 
 # macos
 .DS_Store

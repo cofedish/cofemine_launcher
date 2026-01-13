@@ -55,7 +55,7 @@ public final class Metadata {
     public static final String PUBLISH_URL = SITE_URL;
     public static final String ABOUT_URL = SITE_URL;
     public static final String DOWNLOAD_URL = GITHUB_RELEASES_URL;
-    public static final String HMCL_UPDATE_URL = System.getProperty("hmcl.update_source.override", SITE_URL + "/api/update_link");
+    public static final String HMCL_UPDATE_URL = System.getProperty("hmcl.update_source.override", GITHUB_RELEASES_URL + "/latest/download/update.json");
 
     public static final String DOCS_URL = SITE_URL;
     public static final String CONTACT_URL = TELEGRAM_URL;

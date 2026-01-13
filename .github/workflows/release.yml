@@ -35,6 +35,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
         with:
           cache-cleanup: never
+      - name: Prepare signing key
+        if: ${{ secrets.HMCL_SIGNATURE_KEY_B64 != '' }}
+        shell: bash
+        run: |
+          echo "${{ secrets.HMCL_SIGNATURE_KEY_B64 }}" | base64 -d > "$RUNNER_TEMP/hmcl-sign.key"
       - name: Build with Gradle
         run: ./gradlew build --no-daemon --parallel
         env:
@@ -42,6 +47,19 @@ jobs:
           MICROSOFT_AUTH_SECRET: ${{ secrets.MICROSOFT_AUTH_SECRET }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           HMCL_LAUNCHER_EXE: tools/HMCLauncher.exe
+          HMCL_SIGNATURE_KEY: ${{ runner.temp }}/hmcl-sign.key
+      - name: Generate update metadata
+        shell: bash
+        run: |
+          JAR_PATH=$(ls HMCL/build/libs/CofeMine-Launcher-*.jar | head -n 1)
+          SHA1_PATH="$JAR_PATH.sha1"
+          VERSION="${{ inputs.tag || github.ref_name }}"
+          VERSION="${VERSION#v}"
+          SHA1=$(cat "$SHA1_PATH" | tr -d '\r\n')
+          JAR_NAME=$(basename "$JAR_PATH")
+          cat > HMCL/build/libs/update.json <<EOF
+          {"version":"$VERSION","jar":"https://github.com/cofedish/cofemine_launcher/releases/download/${{ inputs.tag || github.ref_name }}/$JAR_NAME","jarsha1":"$SHA1","force":false}
+          EOF
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -56,3 +74,4 @@ jobs:
             HMCL/build/libs/CofeMine-Launcher-*.exe.sha256
             HMCL/build/libs/CofeMine-Launcher-*.sh
             HMCL/build/libs/CofeMine-Launcher-*.sh.sha256
+            HMCL/build/libs/update.json
