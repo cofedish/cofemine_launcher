@@ -34,6 +34,12 @@ import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import org.jackhuang.hmcl.download.DefaultDependencyManager;
+import org.jackhuang.hmcl.download.DownloadProvider;
+import org.jackhuang.hmcl.download.GameBuilder;
+import org.jackhuang.hmcl.download.RemoteVersion;
+import org.jackhuang.hmcl.game.HMCLGameRepository;
+import org.jackhuang.hmcl.setting.DownloadProviders;
 import org.jackhuang.hmcl.setting.Profile;
 import org.jackhuang.hmcl.setting.Profiles;
 import org.jackhuang.hmcl.task.FileDownloadTask;
@@ -69,6 +75,11 @@ public final class CofeMineModpackService {
     public static final String PROFILE_NAME = "CofeMine";
     public static final String MARKER_DIR = ".cofemine";
     public static final String MARKER_FILE = "installed.json";
+    public static final String DEFAULT_MODPACK_ZIP_URL = "https://disk.yandex.ru/d/hodbEP83a9fu_g";
+    private static final List<String> EMBEDDED_DESCRIPTOR_FILES = List.of(
+            "cofemine-modpack.json",
+            ".cofemine/modpack.json"
+    );
 
     private static final List<String> DEFAULT_UPDATE_DIRS = List.of(
             "mods",
@@ -105,12 +116,8 @@ public final class CofeMineModpackService {
         }, Schedulers.io());
     }
 
-    public Task<Void> createInstallTask(Path targetDir, String zipUrl, @Nullable CofeMineModpackManifest manifest, String manifestUrl) throws IOException {
-        return createTask(targetDir, zipUrl, manifest, manifestUrl, Mode.INSTALL);
-    }
-
     public Task<Void> createUpdateTask(Path targetDir, String zipUrl, @Nullable CofeMineModpackManifest manifest, String manifestUrl) throws IOException {
-        return createTask(targetDir, zipUrl, manifest, manifestUrl, Mode.UPDATE);
+        return createTask(null, targetDir, zipUrl, manifest, manifestUrl, Mode.UPDATE, null);
     }
 
     public static boolean isInstalled(@Nullable Path targetDir) {
@@ -124,7 +131,7 @@ public final class CofeMineModpackService {
         return targetDir.resolve(MARKER_DIR).resolve(MARKER_FILE);
     }
 
-    public static void ensureProfile(Path targetDir) {
+    public static Profile ensureProfile(Path targetDir) {
         Profile existing = Profiles.getProfiles().stream()
                 .filter(profile -> PROFILE_NAME.equals(profile.getName()))
                 .findFirst()
@@ -135,14 +142,23 @@ public final class CofeMineModpackService {
             profile.setUseRelativePath(false);
             Profiles.getProfiles().add(profile);
             Profiles.setSelectedProfile(profile);
+            return profile;
         } else {
             existing.setGameDir(targetDir);
             Profiles.setSelectedProfile(existing);
+            return existing;
         }
     }
 
-    private Task<Void> createTask(Path targetDir, String zipUrl, @Nullable CofeMineModpackManifest manifest, String manifestUrl, Mode mode) throws IOException {
+    public Task<Void> createInstallTask(Profile profile, Path targetDir, String zipUrl, @Nullable CofeMineModpackManifest manifest, String manifestUrl, CofeMineInstallPlan plan) throws IOException {
+        return createTask(profile, targetDir, zipUrl, manifest, manifestUrl, Mode.INSTALL, plan);
+    }
+
+    private Task<Void> createTask(@Nullable Profile profile, Path targetDir, String zipUrl, @Nullable CofeMineModpackManifest manifest, String manifestUrl, Mode mode, @Nullable CofeMineInstallPlan plan) throws IOException {
         Objects.requireNonNull(targetDir, "targetDir");
+        if (mode == Mode.INSTALL && profile == null) {
+            throw new IllegalArgumentException("profile is required for install");
+        }
 
         Path workDir = Files.createTempDirectory("cofemine-modpack");
         String archiveName = resolveArchiveName(zipUrl);
@@ -167,77 +183,14 @@ public final class CofeMineModpackService {
 
         Task<Void> unpackTask = Task.runAsync("CofeMine Unpack", Schedulers.io(), () -> unpackArchive(archivePath, extractDir));
 
-        Task<Void> syncTask = new Task<Void>() {
-            @Override
-            public void execute() throws Exception {
-                Path contentRoot = resolveContentRoot(extractDir);
-                if (mode == Mode.INSTALL) {
-                    FileUtils.copyDirectory(contentRoot, targetDir);
-                } else {
-                    syncUpdateWithProgress(contentRoot, targetDir, manifest);
-                }
+        Task<InstallContext> prepareTask = Task.supplyAsync("CofeMine Prepare", Schedulers.io(), () -> {
+            Path contentRoot = resolveContentRoot(extractDir);
+            ResolvedInstallPlan resolved = null;
+            if (mode == Mode.INSTALL) {
+                resolved = resolveInstallPlan(profile, plan, contentRoot);
             }
-
-            private void syncUpdateWithProgress(Path sourceRoot, Path targetDir, @Nullable CofeMineModpackManifest manifest) throws IOException {
-                Set<String> allowedTopLevel = new HashSet<>();
-                if (manifest != null && manifest.directories() != null && !manifest.directories().isEmpty()) {
-                    for (String entry : manifest.directories()) {
-                        if (StringUtils.isBlank(entry)) {
-                            continue;
-                        }
-                        String normalized = entry.replace('\\', '/');
-                        if (normalized.startsWith("/")) {
-                            normalized = normalized.substring(1);
-                        }
-                        if (normalized.endsWith("/")) {
-                            normalized = normalized.substring(0, normalized.length() - 1);
-                        }
-                        if (!normalized.isBlank()) {
-                            String top = normalized.split("/")[0];
-                            allowedTopLevel.add(top.toLowerCase(Locale.ROOT));
-                        }
-                    }
-                } else {
-                    for (String entry : DEFAULT_UPDATE_DIRS) {
-                        allowedTopLevel.add(entry.toLowerCase(Locale.ROOT));
-                    }
-                }
-
-                List<Path> files = new ArrayList<>();
-                try (var stream = Files.walk(sourceRoot)) {
-                    stream.filter(Files::isRegularFile).forEach(files::add);
-                }
-
-                long total = files.size();
-                long current = 0;
-
-                for (Path file : files) {
-                    current++;
-                    updateProgress(current, total);
-
-                    Path relative = sourceRoot.relativize(file);
-                    if (relative.getNameCount() == 0) {
-                        continue;
-                    }
-                    String topLevel = relative.getName(0).toString().toLowerCase(Locale.ROOT);
-                    if (PROTECTED_TOP_LEVEL.contains(topLevel)) {
-                        continue;
-                    }
-                    if (!allowedTopLevel.contains(topLevel)) {
-                        continue;
-                    }
-                    if ("options.txt".equalsIgnoreCase(relative.toString().replace('\\', '/'))) {
-                        continue;
-                    }
-
-                    Path target = targetDir.resolve(relative.toString());
-                    Files.createDirectories(target.getParent());
-                    Files.copy(file, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                }
-
-                updateProgress(total == 0 ? 1 : total, total == 0 ? 1 : total);
-            }
-        }.setExecutor(Schedulers.io()).setName("CofeMine Sync");
+            return new InstallContext(contentRoot, resolved);
+        });
 
         Task<Void> markerTask = Task.runAsync("CofeMine Marker", Schedulers.io(), () -> {
             writeMarker(targetDir, manifest, zipUrl, manifestUrl);
@@ -245,8 +198,86 @@ public final class CofeMineModpackService {
 
         Task<Void> sequence = downloadTask
                 .thenComposeAsync(unpackTask)
-                .thenComposeAsync(syncTask)
-                .thenComposeAsync(markerTask);
+                .thenComposeAsync(prepareTask)
+                .thenComposeAsync(context -> {
+                    Task<Void> syncTask = new Task<Void>() {
+                        @Override
+                        public void execute() throws Exception {
+                            Path contentRoot = context.contentRoot();
+                            if (mode == Mode.INSTALL) {
+                                FileUtils.copyDirectory(contentRoot, targetDir);
+                            } else {
+                                syncUpdateWithProgress(contentRoot, targetDir, manifest);
+                            }
+                        }
+
+                        private void syncUpdateWithProgress(Path sourceRoot, Path targetDir, @Nullable CofeMineModpackManifest manifest) throws IOException {
+                            Set<String> allowedTopLevel = new HashSet<>();
+                            if (manifest != null && manifest.directories() != null && !manifest.directories().isEmpty()) {
+                                for (String entry : manifest.directories()) {
+                                    if (StringUtils.isBlank(entry)) {
+                                        continue;
+                                    }
+                                    String normalized = entry.replace('\\', '/');
+                                    if (normalized.startsWith("/")) {
+                                        normalized = normalized.substring(1);
+                                    }
+                                    if (normalized.endsWith("/")) {
+                                        normalized = normalized.substring(0, normalized.length() - 1);
+                                    }
+                                    if (!normalized.isBlank()) {
+                                        String top = normalized.split("/")[0];
+                                        allowedTopLevel.add(top.toLowerCase(Locale.ROOT));
+                                    }
+                                }
+                            } else {
+                                for (String entry : DEFAULT_UPDATE_DIRS) {
+                                    allowedTopLevel.add(entry.toLowerCase(Locale.ROOT));
+                                }
+                            }
+
+                            List<Path> files = new ArrayList<>();
+                            try (var stream = Files.walk(sourceRoot)) {
+                                stream.filter(Files::isRegularFile).forEach(files::add);
+                            }
+
+                            long total = files.size();
+                            long current = 0;
+
+                            for (Path file : files) {
+                                current++;
+                                updateProgress(current, total);
+
+                                Path relative = sourceRoot.relativize(file);
+                                if (relative.getNameCount() == 0) {
+                                    continue;
+                                }
+                                String topLevel = relative.getName(0).toString().toLowerCase(Locale.ROOT);
+                                if (PROTECTED_TOP_LEVEL.contains(topLevel)) {
+                                    continue;
+                                }
+                                if (!allowedTopLevel.contains(topLevel)) {
+                                    continue;
+                                }
+                                if ("options.txt".equalsIgnoreCase(relative.toString().replace('\\', '/'))) {
+                                    continue;
+                                }
+
+                                Path target = targetDir.resolve(relative.toString());
+                                Files.createDirectories(target.getParent());
+                                Files.copy(file, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            }
+
+                            updateProgress(total == 0 ? 1 : total, total == 0 ? 1 : total);
+                        }
+                    }.setExecutor(Schedulers.io()).setName("CofeMine Sync");
+
+                    if (mode == Mode.INSTALL) {
+                        Task<Void> installTask = createGameInstallTask(profile, context.plan());
+                        return installTask.thenComposeAsync(syncTask).thenComposeAsync(markerTask);
+                    }
+                    return syncTask.thenComposeAsync(markerTask);
+                });
         return sequence.whenComplete(Schedulers.io(), exception -> FileUtils.deleteDirectoryQuietly(workDir));
     }
 
@@ -491,6 +522,129 @@ public final class CofeMineModpackService {
                 out -> out.write(JsonUtils.GSON.toJson(marker).getBytes(StandardCharsets.UTF_8)));
     }
 
+    public static boolean isDefaultModpackUrl(@Nullable String url) {
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
+        String normalized = StringUtils.removeSuffix(url.trim(), "/");
+        return DEFAULT_MODPACK_ZIP_URL.equals(normalized);
+    }
+
+    private static ResolvedInstallPlan resolveInstallPlan(Profile profile, @Nullable CofeMineInstallPlan plan, Path contentRoot) throws IOException {
+        String manualName = plan != null ? plan.versionName() : null;
+        String manualGameVersion = plan != null ? plan.gameVersion() : null;
+        List<RemoteVersion> manualLoaders = plan != null && plan.loaderVersions() != null ? plan.loaderVersions() : List.of();
+        boolean preferArchive = plan != null && plan.preferArchiveDescriptor();
+
+        CofeMineModpackDescriptor descriptor = preferArchive ? readEmbeddedDescriptor(contentRoot) : null;
+
+        String gameVersion = manualGameVersion;
+        String versionName = manualName;
+        List<RemoteVersion> loaderVersions = manualLoaders;
+        String loaderId = null;
+        String loaderVersion = null;
+
+        if (descriptor != null) {
+            if (StringUtils.isNotBlank(descriptor.minecraft())) {
+                gameVersion = descriptor.minecraft();
+            }
+            if (StringUtils.isNotBlank(descriptor.versionName())) {
+                versionName = descriptor.versionName();
+            }
+            String normalizedLoader = normalizeLoaderId(descriptor.loader());
+            if (normalizedLoader != null && StringUtils.isNotBlank(descriptor.loaderVersion())) {
+                loaderId = normalizedLoader;
+                loaderVersion = descriptor.loaderVersion();
+                loaderVersions = List.of();
+            }
+        }
+
+        if (StringUtils.isBlank(gameVersion)) {
+            throw new IOException("Minecraft version is not specified for modpack install");
+        }
+
+        String resolvedName = normalizeVersionName(profile, versionName);
+        return new ResolvedInstallPlan(resolvedName, gameVersion, loaderVersions, loaderId, loaderVersion);
+    }
+
+    private static Task<Void> createGameInstallTask(Profile profile, @Nullable ResolvedInstallPlan plan) {
+        if (plan == null) {
+            return Task.completed(null);
+        }
+        DownloadProvider downloadProvider = DownloadProviders.getDownloadProvider();
+        DefaultDependencyManager dependencyManager = profile.getDependency(downloadProvider);
+        GameBuilder builder = dependencyManager.gameBuilder();
+        builder.name(plan.versionName());
+        builder.gameVersion(plan.gameVersion());
+
+        if (plan.loaderId() != null && StringUtils.isNotBlank(plan.loaderVersion())) {
+            builder.version(plan.loaderId(), plan.loaderVersion());
+        } else {
+            for (RemoteVersion remoteVersion : plan.loaderVersions()) {
+                builder.version(remoteVersion);
+            }
+        }
+
+        return builder.buildAsync()
+                .whenComplete(any -> profile.getRepository().refreshVersions())
+                .thenRunAsync(Schedulers.javafx(), () -> profile.setSelectedVersion(plan.versionName()));
+    }
+
+    private static @Nullable CofeMineModpackDescriptor readEmbeddedDescriptor(Path contentRoot) {
+        for (String name : EMBEDDED_DESCRIPTOR_FILES) {
+            Path file = contentRoot.resolve(name);
+            if (!Files.isRegularFile(file)) {
+                continue;
+            }
+            try {
+                String json = Files.readString(file, StandardCharsets.UTF_8);
+                return JsonUtils.fromNonNullJson(json, CofeMineModpackDescriptor.class);
+            } catch (IOException | JsonParseException e) {
+                LOG.warning("Failed to read CofeMine modpack descriptor: " + file, e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static String normalizeVersionName(Profile profile, @Nullable String name) {
+        String base = StringUtils.isBlank(name) ? PROFILE_NAME : name.trim();
+        base = base.replaceAll("[^A-Za-z0-9._-]", "-");
+        if (!HMCLGameRepository.isValidVersionId(base)) {
+            base = PROFILE_NAME;
+        }
+        String candidate = base;
+        int index = 1;
+        while (profile.getRepository().versionIdConflicts(candidate)) {
+            candidate = base + "-" + index++;
+        }
+        return candidate;
+    }
+
+    private static @Nullable String normalizeLoaderId(@Nullable String loader) {
+        if (StringUtils.isBlank(loader)) {
+            return null;
+        }
+        String normalized = loader.trim().toLowerCase(Locale.ROOT);
+        switch (normalized) {
+            case "vanilla":
+            case "none":
+                return null;
+            case "neoforge":
+            case "neo_forge":
+                return "neoforge";
+            case "forge":
+            case "fabric":
+            case "quilt":
+            case "cleanroom":
+            case "optifine":
+            case "liteloader":
+                return normalized;
+            default:
+                return normalized;
+        }
+    }
+
     private enum Mode {
         INSTALL,
         UPDATE
@@ -508,6 +662,21 @@ public final class CofeMineModpackService {
             String zipUrl,
             String manifestUrl,
             String installedAt
+    ) {
+    }
+
+    private record InstallContext(
+            Path contentRoot,
+            @Nullable ResolvedInstallPlan plan
+    ) {
+    }
+
+    private record ResolvedInstallPlan(
+            String versionName,
+            String gameVersion,
+            List<RemoteVersion> loaderVersions,
+            @Nullable String loaderId,
+            @Nullable String loaderVersion
     ) {
     }
 }

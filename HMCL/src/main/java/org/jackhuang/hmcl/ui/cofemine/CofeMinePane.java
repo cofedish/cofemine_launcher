@@ -39,6 +39,7 @@ import org.jackhuang.hmcl.cofemine.CofeMineModpackManifest;
 import org.jackhuang.hmcl.cofemine.CofeMineModpackService;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatus;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatusService;
+import org.jackhuang.hmcl.setting.Profile;
 import org.jackhuang.hmcl.task.TaskExecutor;
 import org.jackhuang.hmcl.task.TaskListener;
 import org.jackhuang.hmcl.ui.Controllers;
@@ -372,13 +373,48 @@ public final class CofeMinePane extends VBox {
             if (selected == null) {
                 return;
             }
-            runModpackTask(Mode.INSTALL, selected.toPath());
+            startModpackInstallWizard(selected.toPath());
         } else {
             runModpackTask(Mode.UPDATE, instancePath.get());
         }
     }
 
+    private void startModpackInstallWizard(Path targetDir) {
+        String zipUrl = config().getCofemineModpackZipUrl();
+        String manifestUrl = config().getCofemineModpackManifestUrl();
+        if (StringUtils.isBlank(zipUrl)) {
+            Controllers.dialog(i18n("cofemine.modpack.url.missing"),
+                    i18n("message.error"),
+                    MessageDialogPane.MessageType.ERROR);
+            return;
+        }
+        modpackService.loadManifestAsync(manifestUrl).whenCompleteAsync((manifest, error) -> {
+            CofeMineModpackManifest resolvedManifest = manifest;
+            Profile profile = CofeMineModpackService.ensureProfile(targetDir);
+            boolean preferArchiveDescriptor = CofeMineModpackService.isDefaultModpackUrl(zipUrl);
+            CofeMineModpackInstallWizardProvider provider = new CofeMineModpackInstallWizardProvider(
+                    profile,
+                    targetDir,
+                    zipUrl,
+                    manifestUrl,
+                    resolvedManifest,
+                    modpackService,
+                    preferArchiveDescriptor,
+                    busy,
+                    () -> {
+                        config().setCofemineInstancePath(targetDir.toString());
+                        CofeMineModpackService.ensureProfile(targetDir);
+                        updateModpackState();
+                    }
+            );
+            Controllers.getDecorator().startWizard(provider, i18n("cofemine.modpack.title"));
+        }, Platform::runLater);
+    }
+
     private void runModpackTask(Mode mode, Path targetDir) {
+        if (mode == Mode.INSTALL) {
+            return;
+        }
         String zipUrl = config().getCofemineModpackZipUrl();
         String manifestUrl = config().getCofemineModpackManifestUrl();
         if (StringUtils.isBlank(zipUrl)) {
@@ -392,10 +428,7 @@ public final class CofeMinePane extends VBox {
         modpackService.loadManifestAsync(manifestUrl).whenCompleteAsync((manifest, error) -> {
             CofeMineModpackManifest resolvedManifest = manifest;
             try {
-                TaskExecutor executor = (mode == Mode.INSTALL
-                        ? modpackService.createInstallTask(targetDir, zipUrl, resolvedManifest, manifestUrl)
-                        : modpackService.createUpdateTask(targetDir, zipUrl, resolvedManifest, manifestUrl))
-                        .executor();
+                TaskExecutor executor = modpackService.createUpdateTask(targetDir, zipUrl, resolvedManifest, manifestUrl).executor();
 
                 executor.addTaskListener(new TaskListener() {
                     @Override
@@ -403,8 +436,6 @@ public final class CofeMinePane extends VBox {
                         Platform.runLater(() -> {
                             busy.set(false);
                             if (success) {
-                                config().setCofemineInstancePath(targetDir.toString());
-                                CofeMineModpackService.ensureProfile(targetDir);
                                 updateModpackState();
                             } else if (executor.getException() != null) {
                                 Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
@@ -416,7 +447,7 @@ public final class CofeMinePane extends VBox {
                 });
 
                 Controllers.taskDialog(executor,
-                        i18n(mode == Mode.INSTALL ? "cofemine.modpack.installing" : "cofemine.modpack.updating"),
+                        i18n("cofemine.modpack.updating"),
                         TaskCancellationAction.NORMAL);
                 executor.start();
             } catch (Exception e) {
