@@ -62,6 +62,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -237,6 +238,16 @@ public final class CofeMineModpackService {
                                 }
                             }
 
+                            boolean caseInsensitive = org.jackhuang.hmcl.util.platform.OperatingSystem.CURRENT_OS
+                                    == org.jackhuang.hmcl.util.platform.OperatingSystem.WINDOWS;
+                            Set<String> activeTopLevel = new HashSet<>();
+                            for (String entry : allowedTopLevel) {
+                                if (Files.isDirectory(sourceRoot.resolve(entry))) {
+                                    activeTopLevel.add(entry);
+                                }
+                            }
+
+                            Set<String> sourceFiles = new HashSet<>();
                             List<Path> files = new ArrayList<>();
                             try (var stream = Files.walk(sourceRoot)) {
                                 stream.filter(Files::isRegularFile).forEach(files::add);
@@ -260,13 +271,66 @@ public final class CofeMineModpackService {
                                 if (!allowedTopLevel.contains(topLevel)) {
                                     continue;
                                 }
+                                if (!activeTopLevel.contains(topLevel)) {
+                                    continue;
+                                }
                                 if ("options.txt".equalsIgnoreCase(relative.toString().replace('\\', '/'))) {
                                     continue;
                                 }
 
+                                sourceFiles.add(normalizeRelative(relative, caseInsensitive));
                                 Path target = targetDir.resolve(relative.toString());
                                 Files.createDirectories(target.getParent());
                                 Files.copy(file, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            }
+
+                            if (!activeTopLevel.isEmpty()) {
+                                List<Path> targetFiles = new ArrayList<>();
+                                try (var stream = Files.walk(targetDir)) {
+                                    stream.filter(Files::isRegularFile).forEach(targetFiles::add);
+                                }
+
+                                for (Path file : targetFiles) {
+                                    Path relative = targetDir.relativize(file);
+                                    if (relative.getNameCount() == 0) {
+                                        continue;
+                                    }
+                                    String topLevel = relative.getName(0).toString().toLowerCase(Locale.ROOT);
+                                    if (PROTECTED_TOP_LEVEL.contains(topLevel)) {
+                                        continue;
+                                    }
+                                    if (!activeTopLevel.contains(topLevel)) {
+                                        continue;
+                                    }
+                                    String normalized = normalizeRelative(relative, caseInsensitive);
+                                    if (!sourceFiles.contains(normalized)) {
+                                        Files.deleteIfExists(file);
+                                    }
+                                }
+
+                                List<Path> targetDirs = new ArrayList<>();
+                                try (var stream = Files.walk(targetDir)) {
+                                    stream.filter(Files::isDirectory).forEach(targetDirs::add);
+                                }
+                                targetDirs.sort(Comparator.comparingInt(Path::getNameCount).reversed());
+                                for (Path dir : targetDirs) {
+                                    Path relative = targetDir.relativize(dir);
+                                    if (relative.getNameCount() == 0) {
+                                        continue;
+                                    }
+                                    String topLevel = relative.getName(0).toString().toLowerCase(Locale.ROOT);
+                                    if (PROTECTED_TOP_LEVEL.contains(topLevel)) {
+                                        continue;
+                                    }
+                                    if (!activeTopLevel.contains(topLevel)) {
+                                        continue;
+                                    }
+                                    try (var stream = Files.list(dir)) {
+                                        if (stream.findAny().isEmpty()) {
+                                            Files.deleteIfExists(dir);
+                                        }
+                                    }
+                                }
                             }
 
                             updateProgress(total == 0 ? 1 : total, total == 0 ? 1 : total);
@@ -630,6 +694,11 @@ public final class CofeMineModpackService {
             return readEmbeddedDescriptor(extractDir);
         }
         return null;
+    }
+
+    private static String normalizeRelative(Path relative, boolean caseInsensitive) {
+        String normalized = relative.toString().replace('\\', '/');
+        return caseInsensitive ? normalized.toLowerCase(Locale.ROOT) : normalized;
     }
 
     private static String normalizeVersionName(Profile profile, @Nullable String name) {
