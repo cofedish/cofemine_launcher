@@ -187,7 +187,8 @@ public final class CofeMineModpackService {
             Path contentRoot = resolveContentRoot(extractDir);
             ResolvedInstallPlan resolved = null;
             if (mode == Mode.INSTALL) {
-                resolved = resolveInstallPlan(profile, plan, contentRoot);
+                CofeMineModpackDescriptor descriptor = readEmbeddedDescriptor(contentRoot, extractDir);
+                resolved = resolveInstallPlan(profile, plan, contentRoot, descriptor);
             }
             return new InstallContext(contentRoot, resolved);
         });
@@ -497,6 +498,16 @@ public final class CofeMineModpackService {
                     return candidate;
                 }
             }
+
+            List<Path> candidates = new ArrayList<>();
+            for (Path child : children) {
+                if (Files.isDirectory(child) && looksLikeModpackRoot(child)) {
+                    candidates.add(child);
+                }
+            }
+            if (candidates.size() == 1) {
+                return candidates.get(0);
+            }
         }
         return extractDir;
     }
@@ -530,13 +541,16 @@ public final class CofeMineModpackService {
         return DEFAULT_MODPACK_ZIP_URL.equals(normalized);
     }
 
-    private static ResolvedInstallPlan resolveInstallPlan(Profile profile, @Nullable CofeMineInstallPlan plan, Path contentRoot) throws IOException {
+    private static ResolvedInstallPlan resolveInstallPlan(Profile profile, @Nullable CofeMineInstallPlan plan, Path contentRoot,
+                                                          @Nullable CofeMineModpackDescriptor descriptor) throws IOException {
         String manualName = plan != null ? plan.versionName() : null;
         String manualGameVersion = plan != null ? plan.gameVersion() : null;
         List<RemoteVersion> manualLoaders = plan != null && plan.loaderVersions() != null ? plan.loaderVersions() : List.of();
         boolean preferArchive = plan != null && plan.preferArchiveDescriptor();
 
-        CofeMineModpackDescriptor descriptor = preferArchive ? readEmbeddedDescriptor(contentRoot) : null;
+        if (preferArchive && descriptor == null) {
+            descriptor = readEmbeddedDescriptor(contentRoot);
+        }
 
         String gameVersion = manualGameVersion;
         String versionName = manualName;
@@ -603,6 +617,17 @@ public final class CofeMineModpackService {
                 LOG.warning("Failed to read CofeMine modpack descriptor: " + file, e);
                 return null;
             }
+        }
+        return null;
+    }
+
+    private static @Nullable CofeMineModpackDescriptor readEmbeddedDescriptor(Path contentRoot, Path extractDir) {
+        CofeMineModpackDescriptor descriptor = readEmbeddedDescriptor(contentRoot);
+        if (descriptor != null) {
+            return descriptor;
+        }
+        if (!contentRoot.equals(extractDir)) {
+            return readEmbeddedDescriptor(extractDir);
         }
         return null;
     }
