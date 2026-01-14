@@ -75,6 +75,24 @@ public final class SystemUtils {
         return managedProcess.getProcess().waitFor();
     }
 
+    public static int callExternalProcess(List<String> command, long timeout, TimeUnit unit)
+            throws IOException, InterruptedException, TimeoutException {
+        return callExternalProcess(new ProcessBuilder(command), timeout, unit);
+    }
+
+    public static int callExternalProcess(ProcessBuilder processBuilder, long timeout, TimeUnit unit)
+            throws IOException, InterruptedException, TimeoutException {
+        ManagedProcess managedProcess = new ManagedProcess(processBuilder);
+        managedProcess.pumpInputStream(SystemUtils::onLogLine);
+        managedProcess.pumpErrorStream(SystemUtils::onLogLine);
+        Process process = managedProcess.getProcess();
+        if (!process.waitFor(timeout, unit)) {
+            managedProcess.stop();
+            throw new TimeoutException("External process timed out: " + processBuilder.command());
+        }
+        return process.exitValue();
+    }
+
     public static String run(String... command) throws Exception {
         return run(Arrays.asList(command),
                 inputStream -> IOUtils.readFullyAsString(inputStream, OperatingSystem.NATIVE_CHARSET));

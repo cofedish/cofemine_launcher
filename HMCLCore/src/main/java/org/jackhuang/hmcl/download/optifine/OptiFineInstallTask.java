@@ -26,6 +26,7 @@ import org.jackhuang.hmcl.task.FileDownloadTask;
 import org.jackhuang.hmcl.task.Task;
 import org.jackhuang.hmcl.util.io.CompressingUtils;
 import org.jackhuang.hmcl.util.io.FileUtils;
+import org.jackhuang.hmcl.util.io.NetworkUtils;
 import org.jackhuang.hmcl.util.platform.CommandBuilder;
 import org.jackhuang.hmcl.java.JavaRuntime;
 import org.jackhuang.hmcl.util.platform.SystemUtils;
@@ -40,6 +41,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.jackhuang.hmcl.util.Lang.getOrDefault;
 
@@ -49,6 +51,7 @@ import static org.jackhuang.hmcl.util.Lang.getOrDefault;
  * @author huangyuhui
  */
 public final class OptiFineInstallTask extends Task<Version> {
+    private static final long PROCESS_TIMEOUT_MINUTES = Long.getLong("hmcl.installer.timeout.minutes", 15L);
 
     private final DefaultGameRepository gameRepository;
     private final DefaultDependencyManager dependencyManager;
@@ -144,6 +147,9 @@ public final class OptiFineInstallTask extends Task<Version> {
             if (Files.exists(fs.getPath("optifine/Patcher.class"))) {
                 String[] command = {
                         JavaRuntime.getDefault().getBinary().toString(),
+                        "-Dsun.net.client.defaultConnectTimeout=" + NetworkUtils.TIME_OUT,
+                        "-Dsun.net.client.defaultReadTimeout=" + NetworkUtils.TIME_OUT,
+                        "-Djava.net.useSystemProxies=true",
                         "-cp",
                         dest.toString(),
                         "optifine.Patcher",
@@ -151,7 +157,7 @@ public final class OptiFineInstallTask extends Task<Version> {
                         dest.toString(),
                         optiFineLibraryPath.toString()
                 };
-                int exitCode = SystemUtils.callExternalProcess(command);
+                int exitCode = SystemUtils.callExternalProcess(Arrays.asList(command), PROCESS_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                 if (exitCode != 0)
                     throw new IOException("OptiFine patcher failed, command: " + new CommandBuilder().addAll(Arrays.asList(command)));
             } else {

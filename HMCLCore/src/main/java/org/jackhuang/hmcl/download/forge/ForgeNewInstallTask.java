@@ -38,6 +38,7 @@ import org.jackhuang.hmcl.util.gson.JsonUtils;
 import org.jackhuang.hmcl.util.io.ChecksumMismatchException;
 import org.jackhuang.hmcl.util.io.CompressingUtils;
 import org.jackhuang.hmcl.util.io.FileUtils;
+import org.jackhuang.hmcl.util.io.NetworkUtils;
 import org.jackhuang.hmcl.util.platform.CommandBuilder;
 import org.jackhuang.hmcl.java.JavaRuntime;
 import org.jackhuang.hmcl.util.platform.SystemUtils;
@@ -57,11 +58,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.zip.ZipException;
+import java.util.concurrent.TimeUnit;
 
 import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 import static org.jackhuang.hmcl.util.gson.JsonUtils.fromNonNullJson;
 
 public class ForgeNewInstallTask extends Task<Version> {
+    private static final long PROCESS_TIMEOUT_MINUTES = Long.getLong("hmcl.installer.timeout.minutes", 15L);
 
     private class ProcessorTask extends Task<Void> {
 
@@ -128,6 +131,9 @@ public class ForgeNewInstallTask extends Task<Version> {
 
             List<String> command = new ArrayList<>();
             command.add(JavaRuntime.getDefault().getBinary().toString());
+            command.add("-Dsun.net.client.defaultConnectTimeout=" + NetworkUtils.TIME_OUT);
+            command.add("-Dsun.net.client.defaultReadTimeout=" + NetworkUtils.TIME_OUT);
+            command.add("-Djava.net.useSystemProxies=true");
             command.add("-cp");
 
             List<String> classpath = new ArrayList<>(processor.getClasspath().size() + 1);
@@ -153,7 +159,7 @@ public class ForgeNewInstallTask extends Task<Version> {
             command.addAll(args);
 
             LOG.info("Executing external processor " + processor.getJar().toString() + ", command line: " + new CommandBuilder().addAll(command).toString());
-            int exitCode = SystemUtils.callExternalProcess(command);
+            int exitCode = SystemUtils.callExternalProcess(command, PROCESS_TIMEOUT_MINUTES, TimeUnit.MINUTES);
             if (exitCode != 0)
                 throw new IOException("Game processor exited abnormally with code " + exitCode);
 
