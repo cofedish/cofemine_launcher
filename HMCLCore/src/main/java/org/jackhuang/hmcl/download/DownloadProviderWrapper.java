@@ -20,6 +20,7 @@ package org.jackhuang.hmcl.download;
 import org.jackhuang.hmcl.task.Task;
 
 import java.net.URI;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,6 +28,17 @@ import java.util.Objects;
  * @author Glavo
  */
 public final class DownloadProviderWrapper implements DownloadProvider {
+
+    private static final String DEFAULT_BMCLAPI_ROOT = "https://bmclapi2.bangbang93.com";
+    private static final DownloadProvider FALLBACK_PROVIDER =
+            new BMCLAPIDownloadProvider(System.getProperty("hmcl.bmclapi.override", DEFAULT_BMCLAPI_ROOT));
+    private static final List<String> FORGE_MAVEN_PREFIXES = List.of(
+            "https://maven.minecraftforge.net/",
+            "https://files.minecraftforge.net/maven",
+            "http://files.minecraftforge.net/maven",
+            "https://maven.neoforged.net/releases/",
+            "https://maven.neoforged.net/releases"
+    );
 
     private volatile DownloadProvider provider;
 
@@ -59,12 +71,25 @@ public final class DownloadProviderWrapper implements DownloadProvider {
 
     @Override
     public List<URI> injectURLWithCandidates(String baseURL) {
-        return getProvider().injectURLWithCandidates(baseURL);
+        List<URI> primary = getProvider().injectURLWithCandidates(baseURL);
+        if (!shouldAddForgeFallback(baseURL)) {
+            return primary;
+        }
+        LinkedHashSet<URI> result = new LinkedHashSet<>(primary);
+        result.addAll(FALLBACK_PROVIDER.injectURLWithCandidates(baseURL));
+        return List.copyOf(result);
     }
 
     @Override
     public List<URI> injectURLsWithCandidates(List<String> urls) {
-        return getProvider().injectURLsWithCandidates(urls);
+        if (urls == null || urls.isEmpty()) {
+            return List.of();
+        }
+        LinkedHashSet<URI> result = new LinkedHashSet<>();
+        for (String url : urls) {
+            result.addAll(injectURLWithCandidates(url));
+        }
+        return List.copyOf(result);
     }
 
     @Override
@@ -100,6 +125,18 @@ public final class DownloadProviderWrapper implements DownloadProvider {
     @Override
     public int getConcurrency() {
         return getProvider().getConcurrency();
+    }
+
+    private static boolean shouldAddForgeFallback(String baseURL) {
+        if (baseURL == null) {
+            return false;
+        }
+        for (String prefix : FORGE_MAVEN_PREFIXES) {
+            if (baseURL.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
