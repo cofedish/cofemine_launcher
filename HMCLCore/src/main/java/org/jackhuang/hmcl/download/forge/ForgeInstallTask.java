@@ -31,8 +31,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.jackhuang.hmcl.download.UnsupportedInstallationException.UNSUPPORTED_LAUNCH_WRAPPER;
 import static org.jackhuang.hmcl.util.StringUtils.removePrefix;
@@ -43,6 +46,9 @@ import static org.jackhuang.hmcl.util.StringUtils.removeSuffix;
  * @author huangyuhui
  */
 public final class ForgeInstallTask extends Task<Version> {
+    private static final String DEFAULT_BMCLAPI_ROOT = "https://bmclapi2.bangbang93.com";
+    private static final DownloadProvider FALLBACK_PROVIDER =
+            new BMCLAPIDownloadProvider(System.getProperty("hmcl.bmclapi.override", DEFAULT_BMCLAPI_ROOT));
 
     private final DefaultDependencyManager dependencyManager;
     private final Version version;
@@ -67,9 +73,11 @@ public final class ForgeInstallTask extends Task<Version> {
     public void preExecute() throws Exception {
         installer = Files.createTempFile("forge-installer", ".jar");
 
-        dependent = new FileDownloadTask(
-                dependencyManager.getDownloadProvider().injectURLsWithCandidates(remote.getUrls()),
-                installer, null);
+        Set<java.net.URI> candidates = new LinkedHashSet<>(
+                dependencyManager.getDownloadProvider().injectURLsWithCandidates(remote.getUrls()));
+        candidates.addAll(FALLBACK_PROVIDER.injectURLsWithCandidates(remote.getUrls()));
+
+        dependent = new FileDownloadTask(List.copyOf(candidates), installer, null);
         dependent.setCacheRepository(dependencyManager.getCacheRepository());
         dependent.setCaching(true);
         dependent.addIntegrityCheckHandler(FileDownloadTask.ZIP_INTEGRITY_CHECK_HANDLER);
