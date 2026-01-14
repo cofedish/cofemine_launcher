@@ -248,7 +248,7 @@ public abstract class FetchTask<T> extends Task<T> {
 
                 do {
                     HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(currentURI)
-                            .timeout(Duration.ofMillis(NetworkUtils.TIME_OUT))
+                            .timeout(Duration.ofMillis(DOWNLOAD_REQUEST_TIMEOUT))
                             .header("User-Agent", Holder.USER_AGENT);
 
                     headers.forEach(requestBuilder::header);
@@ -393,6 +393,10 @@ public abstract class FetchTask<T> extends Task<T> {
     private static final Timer timer = new Timer("DownloadSpeedRecorder", true);
     private static final AtomicLong downloadSpeed = new AtomicLong(0L);
     public static final EventManager<SpeedEvent> SPEED_EVENT = EventBus.EVENT_BUS.channel(SpeedEvent.class);
+    private static final long DOWNLOAD_REQUEST_TIMEOUT = Long.getLong(
+            "hmcl.download.request_timeout",
+            Math.max(NetworkUtils.TIME_OUT, 30000L)
+    );
 
     static {
         timer.schedule(new TimerTask() {
