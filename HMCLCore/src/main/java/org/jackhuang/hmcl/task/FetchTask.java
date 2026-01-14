@@ -39,7 +39,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.jackhuang.hmcl.util.Lang.threadPool;
 import static org.jackhuang.hmcl.util.logging.Logger.LOG;
@@ -139,9 +141,35 @@ public abstract class FetchTask<T> extends Task<T> {
                           InputStream inputStream,
                           long contentLength,
                           ContentEncoding contentEncoding) throws IOException, InterruptedException {
+        long stallTimeoutMillis = Long.getLong("hmcl.download.stall_timeout", 120000L);
+        AtomicLong lastProgressAt = new AtomicLong(System.nanoTime());
+        AtomicBoolean stalled = new AtomicBoolean(false);
+        AtomicReference<InputStream> streamRef = new AtomicReference<>();
+        TimerTask stallTask = null;
+
         try (var ignored = context;
              var counter = new CounterInputStream(inputStream);
              var input = contentEncoding.wrap(counter)) {
+            streamRef.set(input);
+            if (stallTimeoutMillis > 0) {
+                long interval = Math.max(1000L, stallTimeoutMillis / 2);
+                stallTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        InputStream current = streamRef.get();
+                        if (current == null) {
+                            return;
+                        }
+                        long idleMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - lastProgressAt.get());
+                        if (idleMillis >= stallTimeoutMillis && stalled.compareAndSet(false, true)) {
+                            LOG.warning("Download stalled for " + idleMillis + "ms, aborting");
+                            IOUtils.closeQuietly(current);
+                        }
+                    }
+                };
+                timer.scheduleAtFixedRate(stallTask, interval, interval);
+            }
+
             long lastDownloaded = 0L;
             byte[] buffer = new byte[IOUtils.DEFAULT_BUFFER_SIZE];
             while (true) {
@@ -151,6 +179,10 @@ public abstract class FetchTask<T> extends Task<T> {
                 if (len == -1) break;
 
                 context.write(buffer, 0, len);
+                if (len > 0) {
+                    lastProgressAt.set(System.nanoTime());
+                    stalled.set(false);
+                }
 
                 if (contentLength >= 0) {
                     // Update progress information per second
@@ -170,6 +202,11 @@ public abstract class FetchTask<T> extends Task<T> {
                 throw new IOException("Unexpected file size: " + counter.downloaded + ", expected: " + contentLength);
 
             context.withResult(true);
+        } finally {
+            streamRef.set(null);
+            if (stallTask != null) {
+                stallTask.cancel();
+            }
         }
     }
 
