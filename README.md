@@ -17,6 +17,12 @@ CofeMine Launcher — кастомный UI и набор фичей для се
 - Discord: https://discord.gg/zyKM2XAnXW
 - Issues: https://github.com/cofedish/cofemine_launcher/issues
 
+## Участие в разработке
+
+Баги, предложения и pull requests приветствуются. Перед созданием
+issue или PR загляните в [`CONTRIBUTING.md`](CONTRIBUTING.md) — там
+кратко описаны правила для форка.
+
 ## Лицензия
 
 Проект распространяется под GPLv3 с дополнительными условиями исходного проекта (см. `LICENSE`).
