@@ -307,6 +307,166 @@ tasks.build {
     dependsOn(makeExecutables)
 }
 
+// --- Native installers via jpackage ---------------------------------------
+//
+// jpackage (bundled with JDK >= 14) produces a native installer for the host
+// OS with an embedded JRE. Cross-compilation is not supported: run each
+// packaging task on its target OS. Tasks are registered unconditionally so
+// they appear in `./gradlew tasks`, but `onlyIf` skips them on wrong hosts.
+//
+// Platform notes:
+//   Windows  -> .exe (or .msi with -PinstallerKind=msi); requires WiX v3 on PATH.
+//   macOS    -> .dmg; requires Xcode Command Line Tools.
+//   Linux    -> .deb (default) or .rpm via `packageInstallerLinuxRpm`.
+//
+// Icons live in HMCL/image/. At least `hmcl.png` must exist. Platform-specific
+// icons (`hmcl.ico`, `hmcl.icns`) are optional — if missing, jpackage falls
+// back to its generic icon. CI generates them on the fly (see release.yml).
+
+val jpackageAppName = "CofeMine Launcher"
+val jpackageVendor = "cofedish"
+val jpackageCopyright = "Copyright (C) 2022 huangyuhui and contributors; (C) 2026 cofedish and contributors."
+val jpackageDescription = "CofeMine Launcher - Minecraft launcher based on HMCL"
+
+// jpackage accepts only digits/dots, 1-3 components. Release tags like
+// v1.2.3 satisfy this; dev builds (e.g. "3.dev-abc1234") don't, so we
+// sanitize to a safe fallback.
+val jpackageAppVersion: String = run {
+    val raw = project.version.toString()
+    if (raw.matches(Regex("^\\d+(\\.\\d+){0,2}$"))) raw else "1.0.0"
+}
+
+val jpackageOutputDir = layout.buildDirectory.dir("installer")
+
+val iconDir = rootProject.file("HMCL/image")
+val iconPng = File(iconDir, "hmcl.png")
+val iconIco = File(iconDir, "hmcl.ico")
+val iconIcns = File(iconDir, "hmcl.icns")
+
+fun Exec.configureJpackage(
+    type: String,
+    iconFile: File?,
+    extraArgs: List<String> = emptyList()
+) {
+    dependsOn(tasks.shadowJar)
+    group = "distribution"
+
+    val jarFile = tasks.shadowJar.get().archiveFile.get().asFile
+    val inputDir = jarFile.parentFile
+    val destDir = jpackageOutputDir.get().asFile
+
+    inputs.file(jarFile)
+    outputs.dir(destDir)
+
+    doFirst {
+        destDir.mkdirs()
+        // jpackage fails if dest already contains an installer with same name.
+        destDir.listFiles()?.forEach { if (it.isFile) it.delete() }
+
+        val javaHome = System.getProperty("java.home")
+        val jpackageExe = File(javaHome).resolve("bin").resolve(
+            if (System.getProperty("os.name").lowercase().startsWith("windows")) "jpackage.exe" else "jpackage"
+        )
+        if (!jpackageExe.exists()) {
+            throw GradleException("jpackage not found at $jpackageExe. Requires JDK >= 14.")
+        }
+
+        val args = mutableListOf(
+            jpackageExe.absolutePath,
+            "--type", type,
+            "--input", inputDir.absolutePath,
+            "--main-jar", jarFile.name,
+            "--name", jpackageAppName,
+            "--app-version", jpackageAppVersion,
+            "--vendor", jpackageVendor,
+            "--copyright", jpackageCopyright,
+            "--description", jpackageDescription,
+            "--dest", destDir.absolutePath
+        )
+        iconFile?.takeIf { it.exists() }?.let { args += listOf("--icon", it.absolutePath) }
+        addOpens.forEach { args += listOf("--java-options", "--add-opens=$it=ALL-UNNAMED") }
+        args += listOf("--java-options", "--enable-native-access=ALL-UNNAMED")
+        args += extraArgs
+
+        commandLine(args)
+        logger.lifecycle("jpackage: {}", args.joinToString(" "))
+    }
+
+    doLast {
+        destDir.listFiles()?.filter { it.isFile && !it.name.endsWith(".sha1") && !it.name.endsWith(".sha256") && !it.name.endsWith(".sha512") }
+            ?.forEach { createChecksum(it) }
+    }
+}
+
+val packageInstallerWindows by tasks.registering(Exec::class) {
+    description = "Builds a Windows .exe installer via jpackage (Windows host only)."
+    val installerKind = (project.findProperty("installerKind") as? String) ?: "exe"
+    configureJpackage(
+        type = installerKind, // "exe" or "msi"
+        iconFile = iconIco.takeIf { it.exists() } ?: iconPng,
+        extraArgs = listOf(
+            "--win-menu",
+            "--win-menu-group", "CofeMine",
+            "--win-shortcut",
+            "--win-dir-chooser"
+        )
+    )
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
+}
+
+val packageInstallerMac by tasks.registering(Exec::class) {
+    description = "Builds a macOS .dmg installer via jpackage (macOS host only)."
+    configureJpackage(
+        type = "dmg",
+        iconFile = iconIcns.takeIf { it.exists() },
+        extraArgs = listOf(
+            "--mac-package-name", "CofeMine"
+        )
+    )
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("mac") }
+}
+
+val packageInstallerLinuxDeb by tasks.registering(Exec::class) {
+    description = "Builds a Linux .deb installer via jpackage (Linux host only)."
+    configureJpackage(
+        type = "deb",
+        iconFile = iconPng,
+        extraArgs = listOf(
+            "--linux-shortcut",
+            "--linux-menu-group", "Game",
+            "--linux-deb-maintainer", "cofedish@users.noreply.github.com",
+            "--linux-package-name", "cofemine-launcher"
+        )
+    )
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("linux") }
+}
+
+val packageInstallerLinuxRpm by tasks.registering(Exec::class) {
+    description = "Builds a Linux .rpm installer via jpackage (Linux host only)."
+    configureJpackage(
+        type = "rpm",
+        iconFile = iconPng,
+        extraArgs = listOf(
+            "--linux-shortcut",
+            "--linux-menu-group", "Game",
+            "--linux-package-name", "cofemine-launcher"
+        )
+    )
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("linux") }
+}
+
+// Convenience aggregate: builds whatever installer(s) fit the current host.
+tasks.register("packageInstaller") {
+    group = "distribution"
+    description = "Builds native installer(s) for the current host OS."
+    val osName = System.getProperty("os.name").lowercase()
+    when {
+        osName.startsWith("windows") -> dependsOn(packageInstallerWindows)
+        osName.startsWith("mac") -> dependsOn(packageInstallerMac)
+        osName.startsWith("linux") -> dependsOn(packageInstallerLinuxDeb, packageInstallerLinuxRpm)
+    }
+}
+
 fun parseToolOptions(options: String?): MutableList<String> {
     if (options == null)
         return mutableListOf()
