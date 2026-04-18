@@ -118,8 +118,11 @@ jobs:
           java-version: '17'
           java-package: 'jdk+fx'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
+      # Intentionally no `gradle/actions/setup-gradle` here: v5 tries to fetch
+      # the Gradle distribution from github.com/gradle/gradle-distributions
+      # (releases mirror) and currently 404s from the Windows/macOS runners.
+      # The wrapper fetches Gradle from services.gradle.org on first invocation
+      # which works on every runner image.
 
       # --- Icon generation: produces platform-specific icons from hmcl.png ---
 
