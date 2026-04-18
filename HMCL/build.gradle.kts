@@ -482,10 +482,135 @@ val packageInstallerWindows by tasks.registering(Exec::class) {
             "--win-help-url", "https://github.com/cofedish/cofemine_launcher",
             "--win-update-url", "https://github.com/cofedish/cofemine_launcher/releases/latest",
             // Stable UpgradeCode keeps this installer compatible with future
-            // versions so they replace instead of stacking.
-            "--win-upgrade-uuid", "6f0d2b1a-c4a1-4b5d-9a8f-cof3m1ne0001"
+            // versions so they replace instead of stacking. Must be a valid
+            // RFC 4122 UUID (hex digits + dashes only).
+            "--win-upgrade-uuid", "6f0d2b1a-c4a1-4b5d-9a8f-a11ce0fe0001"
         )
     )
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
+}
+
+// --- Custom-branded Windows installer via Inno Setup ----------------------
+//
+// Pipeline: jpackage --type app-image produces a self-contained app directory
+// (launcher exe + bundled JRE + our jar), which is then wrapped by Inno Setup
+// into a branded .exe installer. We keep the jpackage msi/.exe task above as
+// a fallback for environments without Inno Setup.
+
+val appImageDir = layout.buildDirectory.dir("app-image")
+val innoAssetsDir = layout.buildDirectory.dir("inno-assets")
+val innoOutputDir = layout.buildDirectory.dir("installer")
+
+val packageWindowsAppImage by tasks.registering(Exec::class) {
+    description = "Produces a jpackage app-image (directory) for Inno Setup to wrap."
+    group = "distribution"
+    dependsOn(tasks.shadowJar)
+
+    val jarFile = tasks.shadowJar.get().archiveFile.get().asFile
+    val inputDir = jarFile.parentFile
+    val outDir = appImageDir.get().asFile
+
+    inputs.file(jarFile)
+    outputs.dir(outDir)
+
+    doFirst {
+        // jpackage --type app-image fails if the target directory already
+        // contains an app-image with the same name. Wipe it each run.
+        if (outDir.exists()) outDir.deleteRecursively()
+        outDir.mkdirs()
+
+        val javaHome = System.getProperty("java.home")
+        val jpackageExe = File(javaHome).resolve("bin").resolve("jpackage.exe")
+        if (!jpackageExe.exists()) {
+            throw GradleException("jpackage not found at $jpackageExe. Requires JDK >= 14.")
+        }
+
+        val args = mutableListOf(
+            jpackageExe.absolutePath,
+            "--type", "app-image",
+            "--input", inputDir.absolutePath,
+            "--main-jar", jarFile.name,
+            "--name", jpackageAppName,
+            "--app-version", jpackageAppVersion,
+            "--vendor", jpackageVendor,
+            "--copyright", jpackageCopyright,
+            "--description", jpackageDescription,
+            "--dest", outDir.absolutePath
+        )
+        val icon = if (iconIco.exists()) iconIco else iconPng
+        if (icon.exists()) args += listOf("--icon", icon.absolutePath)
+        addOpens.forEach { args += listOf("--java-options", "--add-opens=$it=ALL-UNNAMED") }
+        args += listOf("--java-options", "--enable-native-access=ALL-UNNAMED")
+
+        commandLine(args)
+        logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
+    }
+    onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
+}
+
+val packageWindowsInnoSetup by tasks.registering(Exec::class) {
+    description = "Wraps the Windows app-image in a branded Inno Setup installer."
+    group = "distribution"
+    dependsOn(packageWindowsAppImage)
+
+    val issScript = rootProject.file("HMCL/packaging/windows/cofemine-launcher.iss")
+    val outDir = innoOutputDir.get().asFile
+    val appVersion = jpackageAppVersion
+
+    inputs.file(issScript)
+    inputs.dir(appImageDir)
+    inputs.property("version", appVersion)
+    outputs.file(File(outDir, "${jpackageAppName}-Setup.exe"))
+
+    doFirst {
+        outDir.mkdirs()
+        // Locate iscc.exe: GitHub runners have it preinstalled at the path
+        // below; local dev machines usually have it on PATH after install.
+        val candidates = listOf(
+            System.getenv("INNO_SETUP")?.let { File(it) },
+            File("C:/Program Files (x86)/Inno Setup 6/iscc.exe"),
+            File("C:/Program Files/Inno Setup 6/iscc.exe")
+        ).filterNotNull()
+        val iscc = candidates.firstOrNull { it.exists() }
+            ?: throw GradleException(
+                "Inno Setup compiler (iscc.exe) not found. Install Inno Setup 6 " +
+                "from https://jrsoftware.org/isinfo.php or set INNO_SETUP env var."
+            )
+
+        val assetsDir = innoAssetsDir.get().asFile
+        val bannerWelcome = File(assetsDir, "welcome.bmp")
+        val bannerHeader = File(assetsDir, "header.bmp")
+
+        val args = mutableListOf(
+            iscc.absolutePath,
+            "/DAppVersion=$appVersion",
+            "/DAppName=${jpackageAppName}",
+            "/DAppMenuName=${jpackageMenuName}",
+            "/DAppPublisher=${jpackageVendor}",
+            "/DOutputDir=${outDir.absolutePath.replace('\\', '/')}",
+            "/DOutputBase=${jpackageAppName}-Setup",
+            "/DAppImageDir=${appImageDir.get().asFile.resolve(jpackageAppName).absolutePath.replace('\\', '/')}",
+            "/DAppIcon=${iconIco.absolutePath.replace('\\', '/')}",
+            "/DLicenseFile=${rootProject.file("LICENSE").absolutePath.replace('\\', '/')}"
+        )
+        if (bannerWelcome.exists())
+            args += "/DWelcomeBanner=${bannerWelcome.absolutePath.replace('\\', '/')}"
+        if (bannerHeader.exists())
+            args += "/DHeaderBanner=${bannerHeader.absolutePath.replace('\\', '/')}"
+
+        args += issScript.absolutePath
+
+        commandLine(args)
+        logger.lifecycle("iscc: {}", args.joinToString(" "))
+    }
+
+    doLast {
+        // The .iss sets OutputBaseFilename to ${jpackageAppName}-Setup, so the
+        // resulting file is already versionless. Just add checksums.
+        val installer = File(outDir, "${jpackageAppName}-Setup.exe")
+        if (installer.exists()) createChecksum(installer)
+    }
+
     onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
 }
 
@@ -531,12 +656,15 @@ val packageInstallerLinuxRpm by tasks.registering(Exec::class) {
 }
 
 // Convenience aggregate: builds whatever installer(s) fit the current host.
+// On Windows we prefer the branded Inno Setup installer; if Inno Setup
+// isn't available the MSI/EXE jpackage fallback (packageInstallerWindows)
+// can be invoked directly.
 tasks.register("packageInstaller") {
     group = "distribution"
     description = "Builds native installer(s) for the current host OS."
     val osName = System.getProperty("os.name").lowercase()
     when {
-        osName.startsWith("windows") -> dependsOn(packageInstallerWindows)
+        osName.startsWith("windows") -> dependsOn(packageWindowsInnoSetup)
         osName.startsWith("mac") -> dependsOn(packageInstallerMac)
         osName.startsWith("linux") -> dependsOn(packageInstallerLinuxDeb, packageInstallerLinuxRpm)
     }

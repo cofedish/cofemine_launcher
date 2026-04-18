@@ -163,10 +163,53 @@ jobs:
           MICROSOFT_AUTH_SECRET: ${{ secrets.MICROSOFT_AUTH_SECRET }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
 
-      - name: Build Windows installer
+      - name: Generate Inno Setup banner images
         if: matrix.kind == 'windows'
         shell: pwsh
-        run: ./gradlew :HMCL:packageInstallerWindows --no-daemon
+        run: |
+          # Composite two BMP banners used by the Inno Setup wizard from the
+          # launcher icon. ImageMagick is pre-installed on windows-latest.
+          $ErrorActionPreference = 'Stop'
+          $assetsDir = 'HMCL/build/inno-assets'
+          New-Item -ItemType Directory -Force $assetsDir | Out-Null
+
+          # --- Welcome banner: 164x314, coffee-themed gradient + logo + text -------
+          # The gradient runs from a deep espresso brown to a warm latte cream.
+          # Logo is composited centered-upper, product name underneath.
+          magick `
+            -size 164x314 `
+            gradient:'#2b1a12'-'#6b4226' `
+            ( HMCL/image/hmcl.png -resize 96x96 ) `
+            -gravity North -geometry +0+40 -composite `
+            -font Verdana -pointsize 13 -fill '#f5e6d0' -gravity North `
+            -annotate +0+150 'CofeMine' `
+            -pointsize 11 -fill '#d9b48a' `
+            -annotate +0+172 'Launcher' `
+            -pointsize 8 -fill '#8c6a4a' `
+            -annotate +0+212 'powered by HMCL' `
+            BMP3:"$assetsDir/welcome.bmp"
+
+          # --- Header banner: 150x57, darker coffee strip + small logo -------
+          magick `
+            -size 150x57 `
+            gradient:'#1a0f08'-'#3e2417' `
+            ( HMCL/image/hmcl.png -resize 40x40 ) `
+            -gravity West -geometry +10+0 -composite `
+            -font Verdana -pointsize 11 -fill '#f5e6d0' -gravity West `
+            -annotate +58+0 'CofeMine Launcher' `
+            BMP3:"$assetsDir/header.bmp"
+
+          Write-Host 'Generated banners:'
+          Get-ChildItem $assetsDir
+
+      - name: Build Windows installer (Inno Setup)
+        if: matrix.kind == 'windows'
+        shell: pwsh
+        run: |
+          # Inno Setup 6 is pre-installed on windows-latest runners at
+          # C:\Program Files (x86)\Inno Setup 6 — the Gradle task finds iscc
+          # there automatically.
+          ./gradlew :HMCL:packageWindowsInnoSetup --no-daemon --stacktrace
 
       - name: Build macOS installer
         if: matrix.kind == 'macos'
