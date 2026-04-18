@@ -23,6 +23,8 @@ import org.jackhuang.hmcl.util.platform.Architecture;
 import org.jackhuang.hmcl.util.platform.OperatingSystem;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
@@ -90,10 +92,30 @@ public final class Metadata {
         }
 
         String hmclCurrentDir = System.getProperty("hmcl.dir");
-        HMCL_CURRENT_DIRECTORY = hmclCurrentDir != null
-                ? Paths.get(hmclCurrentDir).toAbsolutePath().normalize()
-                : CURRENT_DIRECTORY.resolve(".hmcl");
+        if (hmclCurrentDir != null) {
+            HMCL_CURRENT_DIRECTORY = Paths.get(hmclCurrentDir).toAbsolutePath().normalize();
+        } else {
+            // Default is `<cwd>/.hmcl` so the launcher stays portable when run
+            // from a user folder. When packaged via jpackage the working
+            // directory is the install dir (e.g. Program Files) which isn't
+            // writable for non-admin users — fall back to the per-user global
+            // directory (%APPDATA%/.hmcl on Windows, platform equivalents
+            // elsewhere) in that case.
+            Path portable = CURRENT_DIRECTORY.resolve(".hmcl");
+            HMCL_CURRENT_DIRECTORY = isPathUsable(portable) ? portable : HMCL_GLOBAL_DIRECTORY;
+        }
         DEPENDENCIES_DIRECTORY = HMCL_CURRENT_DIRECTORY.resolve("dependencies");
+    }
+
+    private static boolean isPathUsable(Path dir) {
+        // Try to create the directory. If that succeeds the parent is writable.
+        // If it already exists as a directory, that's also fine.
+        try {
+            Files.createDirectories(dir);
+            return Files.isWritable(dir);
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
     }
 
     public static boolean isStable() {

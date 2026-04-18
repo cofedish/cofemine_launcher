@@ -181,19 +181,9 @@ jobs:
           sudo apt-get install -y fakeroot rpm
           ./gradlew :HMCL:packageInstallerLinuxDeb :HMCL:packageInstallerLinuxRpm --no-daemon
 
-      - name: Normalize installer filenames
+      - name: List installer artifacts
         shell: bash
-        run: |
-          set -euo pipefail
-          cd HMCL/build/installer
-          for f in *; do
-            # Replace spaces with dashes so asset URLs are clean.
-            new="${f// /-}"
-            if [ "$f" != "$new" ]; then
-              mv -- "$f" "$new"
-            fi
-          done
-          ls -la
+        run: ls -la HMCL/build/installer/
 
       - name: Upload installer assets to release
         uses: softprops/action-gh-release@v2

@@ -323,7 +323,13 @@ tasks.build {
 // icons (`hmcl.ico`, `hmcl.icns`) are optional — if missing, jpackage falls
 // back to its generic icon. CI generates them on the fly (see release.yml).
 
-val jpackageAppName = "CofeMine Launcher"
+// Installer identity. `jpackageAppName` is used for the install folder,
+// shortcuts and the installer filename — kept space-free so the default
+// install path stays at `%LocalAppData%\Programs\CofeMine-Launcher` without
+// awkward escaping. `jpackageMenuName` is the human-friendly Start-menu /
+// shortcut label shown to end users.
+val jpackageAppName = "CofeMine-Launcher"
+val jpackageMenuName = "CofeMine Launcher"
 val jpackageVendor = "cofedish"
 val jpackageCopyright = "Copyright (C) 2022 huangyuhui and contributors; (C) 2026 cofedish and contributors."
 val jpackageDescription = "CofeMine Launcher - Minecraft launcher based on HMCL"
@@ -360,8 +366,28 @@ fun Exec.configureJpackage(
 
     doFirst {
         destDir.mkdirs()
-        // jpackage fails if dest already contains an installer with same name.
-        destDir.listFiles()?.forEach { if (it.isFile) it.delete() }
+        // jpackage fails if dest already contains an installer with the same
+        // filename. Delete only files matching this task's output type so that
+        // a sibling task's artifacts (e.g. .deb when building .rpm) survive.
+        val typeExtensions = when (type) {
+            "deb" -> listOf(".deb")
+            "rpm" -> listOf(".rpm")
+            "dmg" -> listOf(".dmg")
+            "pkg" -> listOf(".pkg")
+            "msi" -> listOf(".msi")
+            "exe" -> listOf(".exe")
+            else -> listOf(".$type")
+        }
+        destDir.listFiles()?.forEach { f ->
+            if (f.isFile && typeExtensions.any { ext ->
+                    f.name.endsWith(ext) ||
+                    f.name.endsWith("$ext.sha1") ||
+                    f.name.endsWith("$ext.sha256") ||
+                    f.name.endsWith("$ext.sha512")
+                }) {
+                f.delete()
+            }
+        }
 
         val javaHome = System.getProperty("java.home")
         val jpackageExe = File(javaHome).resolve("bin").resolve(
@@ -393,8 +419,47 @@ fun Exec.configureJpackage(
     }
 
     doLast {
-        destDir.listFiles()?.filter { it.isFile && !it.name.endsWith(".sha1") && !it.name.endsWith(".sha256") && !it.name.endsWith(".sha512") }
-            ?.forEach { createChecksum(it) }
+        // Strip the version suffix from jpackage's output file so release
+        // assets keep stable, version-less names across releases.
+        // jpackage produces names like:
+        //   CofeMine-Launcher-1.2.9.exe        (Windows .exe/.msi/.dmg/.pkg)
+        //   cofemine-launcher_1.2.9-1_amd64.deb (Linux .deb)
+        //   cofemine-launcher-1.2.9-1.x86_64.rpm (Linux .rpm)
+        val renamed = mutableListOf<File>()
+        destDir.listFiles()?.forEach { f ->
+            if (!f.isFile) return@forEach
+            val ext = when {
+                f.name.endsWith(".exe") -> ".exe"
+                f.name.endsWith(".msi") -> ".msi"
+                f.name.endsWith(".dmg") -> ".dmg"
+                f.name.endsWith(".pkg") -> ".pkg"
+                f.name.endsWith(".deb") -> ".deb"
+                f.name.endsWith(".rpm") -> ".rpm"
+                else -> return@forEach
+            }
+            val versionless = when (ext) {
+                // Windows .exe from jpackage is an installer, but the
+                // existing `makeExecutables` task also produces a
+                // `CofeMine-Launcher.exe` portable wrapper — use a `-Setup`
+                // suffix to disambiguate and to match the usual Windows
+                // convention for installer binaries.
+                ".exe" -> "$jpackageAppName-Setup$ext"
+                ".msi" -> "$jpackageAppName-Setup$ext"
+                ".deb" -> "cofemine-launcher$ext"
+                ".rpm" -> "cofemine-launcher$ext"
+                else -> "$jpackageAppName$ext"
+            }
+            if (f.name != versionless) {
+                val target = File(destDir, versionless)
+                if (target.exists()) target.delete()
+                if (f.renameTo(target)) {
+                    renamed += target
+                    return@forEach
+                }
+            }
+            renamed += f
+        }
+        renamed.forEach { createChecksum(it) }
     }
 }
 
@@ -405,10 +470,20 @@ val packageInstallerWindows by tasks.registering(Exec::class) {
         type = installerKind, // "exe" or "msi"
         iconFile = iconIco.takeIf { it.exists() } ?: iconPng,
         extraArgs = listOf(
+            // Per-user install ends up under %LocalAppData%\Programs\<name>,
+            // so non-admin users can install without UAC and the launcher's
+            // working directory is writable.
+            "--win-per-user-install",
             "--win-menu",
-            "--win-menu-group", "CofeMine",
+            "--win-menu-group", jpackageMenuName,
             "--win-shortcut",
-            "--win-dir-chooser"
+            "--win-shortcut-prompt",
+            "--win-dir-chooser",
+            "--win-help-url", "https://github.com/cofedish/cofemine_launcher",
+            "--win-update-url", "https://github.com/cofedish/cofemine_launcher/releases/latest",
+            // Stable UpgradeCode keeps this installer compatible with future
+            // versions so they replace instead of stacking.
+            "--win-upgrade-uuid", "6f0d2b1a-c4a1-4b5d-9a8f-cof3m1ne0001"
         )
     )
     onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
