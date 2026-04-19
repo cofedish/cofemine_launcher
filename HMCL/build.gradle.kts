@@ -435,6 +435,7 @@ fun Exec.configureJpackage(
         // high-refresh-rate monitors.
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
+        args += listOf("--java-options", "-Djavafx.animation.fullspeed=true")
         args += extraArgs
 
         commandLine(args)
@@ -571,9 +572,38 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         // the user's graphics stack.
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
+        // Lift the JavaFX pulse throttle so undecorated-window dragging
+        // isn't capped at 60 Hz on 120/144/180 Hz monitors. Combined with
+        // prism.vsync=true the effective rate tracks the monitor refresh.
+        args += listOf("--java-options", "-Djavafx.animation.fullspeed=true")
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
+    }
+    doLast {
+        // jpackage strips the JRE launcher binaries (java.exe / javaw.exe)
+        // from the bundled runtime because its own native exe boots the JVM
+        // via JNI. HMCL however spawns child JVMs through
+        // JavaRuntime.getDefault().getBinary() — to launch Minecraft, to run
+        // Forge/NeoForge installer processors, and to restart itself after
+        // an auto-update. Without java.exe in runtime/bin those paths NPE
+        // with "JavaRuntime.getDefault() is null" during modpack install.
+        //
+        // Copy the executables back from the JDK that produced this build.
+        // They're small loaders that pick up the already-bundled java.dll,
+        // so the runtime stays self-contained.
+        val sourceBin = File(System.getProperty("java.home"), "bin")
+        val bundledBin = File(outDir, "$jpackageAppName/runtime/bin")
+        if (bundledBin.isDirectory) {
+            listOf("java.exe", "javaw.exe", "javac.exe").forEach { name ->
+                val src = File(sourceBin, name)
+                val dst = File(bundledBin, name)
+                if (src.exists() && !dst.exists()) {
+                    src.copyTo(dst, overwrite = false)
+                    logger.lifecycle("Copied {} into bundled runtime", name)
+                }
+            }
+        }
     }
     onlyIf { System.getProperty("os.name").lowercase().startsWith("windows") }
 }
