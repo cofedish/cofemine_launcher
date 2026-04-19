@@ -1,4 +1,4 @@
-; ============================================================================
+﻿; ============================================================================
 ; CofeMine Launcher — Custom Windows Installer (Inno Setup 6)
 ; ----------------------------------------------------------------------------
 ; This script wraps the jpackage-produced app-image into a branded installer.
@@ -37,11 +37,12 @@
 #endif
 
 ; Stable AppId — never change between releases or upgrades stop working.
-; Must be a syntactically valid hex GUID (8-4-4-4-12).
-#define MyAppId "C0FEC0FE-C0FE-4C0F-8C0F-ABCDEF012026"
+; AppId is any unique string; we skip GUID braces to avoid Inno Setup
+; misreading them as constant references.
+#define MyAppId "cofemine-launcher-cofedish-2026"
 
 [Setup]
-AppId={{#MyAppId}}
+AppId={#MyAppId}
 AppName={#AppMenuName}
 AppVersion={#AppVersion}
 AppVerName={#AppMenuName} {#AppVersion}
@@ -70,7 +71,6 @@ MinVersion=10.0
 
 ; Modern wizard.
 WizardStyle=modern
-WizardResizable=no
 #ifdef WelcomeBanner
 WizardImageFile={#WelcomeBanner}
 WizardImageStretch=yes

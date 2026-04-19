@@ -566,11 +566,13 @@ val packageWindowsInnoSetup by tasks.registering(Exec::class) {
         outDir.mkdirs()
         // Locate iscc.exe: GitHub runners have it preinstalled at the path
         // below; local dev machines usually have it on PATH after install.
-        val candidates = listOf(
+        val localAppData = System.getenv("LOCALAPPDATA")
+        val candidates = listOfNotNull(
             System.getenv("INNO_SETUP")?.let { File(it) },
-            File("C:/Program Files (x86)/Inno Setup 6/iscc.exe"),
-            File("C:/Program Files/Inno Setup 6/iscc.exe")
-        ).filterNotNull()
+            File("C:/Program Files (x86)/Inno Setup 6/ISCC.exe"),
+            File("C:/Program Files/Inno Setup 6/ISCC.exe"),
+            localAppData?.let { File("$it/Programs/Inno Setup 6/ISCC.exe") }
+        )
         val iscc = candidates.firstOrNull { it.exists() }
             ?: throw GradleException(
                 "Inno Setup compiler (iscc.exe) not found. Install Inno Setup 6 " +
