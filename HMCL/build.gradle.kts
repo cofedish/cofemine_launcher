@@ -428,6 +428,13 @@ fun Exec.configureJpackage(
         // the self-check only for installed builds — portable JAR users
         // aren't affected.
         args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
+        // Force JavaFX to pick a GPU pipeline (Direct3D on Windows, Metal on
+        // macOS, GL on Linux). Without this, Prism sometimes falls back to
+        // the software rasterizer even on modern GPUs, which shows up as a
+        // perceived 30fps cap when moving/dragging the launcher window on
+        // high-refresh-rate monitors.
+        args += listOf("--java-options", "-Dprism.forceGPU=true")
+        args += listOf("--java-options", "-Dprism.vsync=true")
         args += extraArgs
 
         commandLine(args)
@@ -557,12 +564,13 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         if (icon.exists()) args += listOf("--icon", icon.absolutePath)
         addOpens.forEach { args += listOf("--java-options", "--add-opens=$it=ALL-UNNAMED") }
         args += listOf("--java-options", "--enable-native-access=ALL-UNNAMED")
-        // Our release JARs aren't RSA-signed (HMCL_SIGNATURE_KEY isn't
-        // configured), so `IntegrityChecker.isSelfVerified()` returns false
-        // and the in-launcher update flow refuses to swap the JAR. Disable
-        // the self-check only for installed builds — portable JAR users
-        // aren't affected.
         args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
+        // Force JavaFX onto a GPU pipeline so the window animates at the
+        // monitor's refresh rate instead of the ~30 fps the Prism software
+        // rasterizer falls back to when it misdetects the capabilities of
+        // the user's graphics stack.
+        args += listOf("--java-options", "-Dprism.forceGPU=true")
+        args += listOf("--java-options", "-Dprism.vsync=true")
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
