@@ -114,10 +114,15 @@ public final class CurseForgeRemoteModRepository implements RemoteModRepository 
         if (category != null && category.getSelf() instanceof CurseAddon.Category) {
             categoryId = ((CurseAddon.Category) category.getSelf()).getId();
         }
+        // CurseForge v1 API treats categoryId=0 as a real filter that matches
+        // nothing rather than "any category" — sending it empties the result
+        // set even when there are thousands of matches. Pass null so
+        // NetworkUtils.withQuery omits the param entirely when no category is
+        // selected.
         Response<List<CurseAddon>> response = withApiKey(HttpRequest.GET(downloadProvider.injectURL(NetworkUtils.withQuery(PREFIX + "/v1/mods/search", mapOf(
                 pair("gameId", "432"),
                 pair("classId", Integer.toString(section)),
-                pair("categoryId", Integer.toString(categoryId)),
+                pair("categoryId", categoryId == 0 ? null : Integer.toString(categoryId)),
                 pair("gameVersion", gameVersion),
                 pair("searchFilter", searchFilter),
                 pair("sortField", Integer.toString(toModsSearchSortField(sortType))),

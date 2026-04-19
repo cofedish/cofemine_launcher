@@ -144,7 +144,12 @@ Name: "{autodesktop}\{#AppMenuName}"; Filename: "{app}\{#AppName}.exe"; IconFile
 
 [Run]
 ; Refresh the Windows icon cache so the new CofeMine icon replaces the
-; previous (possibly HMCL) one the explorer had cached for this EXE path.
+; previous HMCL one the explorer had cached for this EXE path. Windows
+; 10/11 keeps icons in iconcache_*.db files that don't invalidate just
+; because a file was overwritten at the same path. We restart explorer
+; (quick flash, no data loss) and then force a shell refresh so taskbar,
+; Start-menu and pinned shortcuts all pick up the new icon.
+Filename: "{cmd}"; Parameters: "/C taskkill /IM explorer.exe /F & del /a /q ""%localappdata%\IconCache.db"" ""%localappdata%\Microsoft\Windows\Explorer\iconcache_*.db"" 2>nul & start explorer.exe"; Flags: runhidden
 Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; Flags: runhidden
 Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchAfterInstall}"; Flags: nowait postinstall skipifsilent
 
