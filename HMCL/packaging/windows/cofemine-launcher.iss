@@ -143,6 +143,9 @@ Name: "{autoprograms}\{#AppMenuName}"; Filename: "{app}\{#AppName}.exe"; IconFil
 Name: "{autodesktop}\{#AppMenuName}"; Filename: "{app}\{#AppName}.exe"; IconFilename: "{app}\{#AppName}.exe"; Tasks: desktopicon; Comment: "{#AppMenuName}"
 
 [Run]
+; Refresh the Windows icon cache so the new CofeMine icon replaces the
+; previous (possibly HMCL) one the explorer had cached for this EXE path.
+Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; Flags: runhidden
 Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchAfterInstall}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
@@ -155,6 +158,54 @@ Type: files;         Name: "{app}\{#AppName}.ico"
 Type: dirifempty;    Name: "{app}"
 
 [Code]
+function GetUninstallerPath(): String;
+var
+  subkey, value: String;
+begin
+  { When a previous install exists Inno Setup stores its uninstaller path
+    under HKCU\...\Uninstall\<AppId>_is1. Read it so we can run the old
+    uninstaller silently before the new install copies files in. }
+  subkey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\' +
+            ExpandConstant('{#MyAppId}') + '_is1';
+  Result := '';
+  if RegQueryStringValue(HKCU, subkey, 'QuietUninstallString', value) then
+    Result := value
+  else if RegQueryStringValue(HKCU, subkey, 'UninstallString', value) then
+    Result := value
+  else if RegQueryStringValue(HKLM, subkey, 'QuietUninstallString', value) then
+    Result := value
+  else if RegQueryStringValue(HKLM, subkey, 'UninstallString', value) then
+    Result := value;
+end;
+
+function InitializeSetup(): Boolean;
+var
+  uninst, execPath, execArgs: String;
+  resultCode: Integer;
+  spacePos: Integer;
+begin
+  Result := True;
+  uninst := GetUninstallerPath();
+  if uninst = '' then
+    Exit;
+
+  { Run the previous uninstaller silently so the install looks like an
+    in-place upgrade — no confirmation, no duplicate entry in Programs. }
+  execPath := uninst;
+  execArgs := '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART';
+
+  if (Length(uninst) > 0) and (uninst[1] = '"') then begin
+    spacePos := Pos('"', Copy(uninst, 2, Length(uninst)));
+    if spacePos > 0 then begin
+      execPath := Copy(uninst, 2, spacePos - 1);
+      if Length(uninst) > spacePos + 2 then
+        execArgs := Copy(uninst, spacePos + 3, Length(uninst)) + ' ' + execArgs;
+    end;
+  end;
+
+  Exec(execPath, execArgs, '', SW_HIDE, ewWaitUntilTerminated, resultCode);
+end;
+
 procedure InitializeWizard();
 var
   WelcomeBody, FinishBody: String;

@@ -422,6 +422,12 @@ fun Exec.configureJpackage(
         iconFile?.takeIf { it.exists() }?.let { args += listOf("--icon", it.absolutePath) }
         addOpens.forEach { args += listOf("--java-options", "--add-opens=$it=ALL-UNNAMED") }
         args += listOf("--java-options", "--enable-native-access=ALL-UNNAMED")
+        // Our release JARs aren't RSA-signed (HMCL_SIGNATURE_KEY isn't
+        // configured), so `IntegrityChecker.isSelfVerified()` returns false
+        // and the in-launcher update flow refuses to swap the JAR. Disable
+        // the self-check only for installed builds — portable JAR users
+        // aren't affected.
+        args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
         args += extraArgs
 
         commandLine(args)
@@ -551,6 +557,12 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         if (icon.exists()) args += listOf("--icon", icon.absolutePath)
         addOpens.forEach { args += listOf("--java-options", "--add-opens=$it=ALL-UNNAMED") }
         args += listOf("--java-options", "--enable-native-access=ALL-UNNAMED")
+        // Our release JARs aren't RSA-signed (HMCL_SIGNATURE_KEY isn't
+        // configured), so `IntegrityChecker.isSelfVerified()` returns false
+        // and the in-launcher update flow refuses to swap the JAR. Disable
+        // the self-check only for installed builds — portable JAR users
+        // aren't affected.
+        args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
