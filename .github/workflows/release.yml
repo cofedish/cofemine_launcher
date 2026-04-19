@@ -104,12 +104,26 @@ jobs:
             asset_glob: 'HMCL/build/installer/*.deb HMCL/build/installer/*.rpm'
             asset_ext: deb
     runs-on: ${{ matrix.os }}
+    env:
+      # Promote secrets to job-level env so they're available to every step
+      # regardless of shell or runner OS. The step-level env inheritance was
+      # leaving Windows shadowJar with an empty CurseForge key in v1.2.14.
+      MICROSOFT_AUTH_ID: ${{ secrets.MICROSOFT_AUTH_ID }}
+      MICROSOFT_AUTH_SECRET: ${{ secrets.MICROSOFT_AUTH_SECRET }}
+      CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Sanity-check secrets reached the runner
+        shell: bash
+        run: |
+          # Print only the length + first 4 chars so nothing sensitive leaks.
+          printf 'CURSEFORGE_API_KEY length=%s prefix=%s\n' \
+            "${#CURSEFORGE_API_KEY}" "${CURSEFORGE_API_KEY:0:4}"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

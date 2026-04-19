@@ -45,6 +45,16 @@ val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""
 val microsoftAuthSecret = System.getenv("MICROSOFT_AUTH_SECRET") ?: ""
 val curseForgeApiKey = System.getenv("CURSEFORGE_API_KEY") ?: ""
 
+// Surface the embedded-integration state up front so it shows up in the CI
+// log. `createPropertiesFile` is cached, so any missing value here is the
+// reason CurseForge search later 403s at runtime.
+logger.lifecycle(
+    "CofeMine secrets: CURSEFORGE_API_KEY={} MICROSOFT_AUTH_ID={} MICROSOFT_AUTH_SECRET={}",
+    if (curseForgeApiKey.isEmpty()) "<empty>" else "<${curseForgeApiKey.length} chars>",
+    if (microsoftAuthId.isEmpty()) "<empty>" else "<set>",
+    if (microsoftAuthSecret.isEmpty()) "<empty>" else "<set>"
+)
+
 val launcherExe = System.getenv("HMCL_LAUNCHER_EXE")
 val launcherExeFile = launcherExe?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
 if (launcherExeFile != null && !launcherExeFile.exists()) {
