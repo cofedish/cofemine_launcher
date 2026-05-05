@@ -10,12 +10,15 @@
 package org.jackhuang.hmcl.cofemine;
 
 import org.jackhuang.hmcl.download.DefaultDependencyManager;
+import org.jackhuang.hmcl.game.GameDirectoryType;
+import org.jackhuang.hmcl.game.HMCLGameRepository;
 import org.jackhuang.hmcl.mod.Modpack;
 import org.jackhuang.hmcl.mod.modrinth.ModrinthInstallTask;
 import org.jackhuang.hmcl.mod.modrinth.ModrinthManifest;
 import org.jackhuang.hmcl.mod.modrinth.ModrinthModpackProvider;
 import org.jackhuang.hmcl.setting.DownloadProviders;
 import org.jackhuang.hmcl.setting.Profile;
+import org.jackhuang.hmcl.setting.VersionSetting;
 import org.jackhuang.hmcl.task.FileDownloadTask;
 import org.jackhuang.hmcl.task.Schedulers;
 import org.jackhuang.hmcl.task.Task;
@@ -28,29 +31,34 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.jackhuang.hmcl.util.logging.Logger.LOG;
+
 /**
  * Installs / updates a CofeMine pack delivered as a Modrinth-format
- * {@code .mrpack} archive served by the panel. The Modrinth flow already
- * understands {@code modrinth.index.json}, applies overrides, and chains
- * the Minecraft + loader install — we just download the file from the
- * panel URL and hand it off.
+ * {@code .mrpack} archive served by the panel.
+ *
+ * <p>The flow mirrors {@code ModpackHelper.getInstallTask} from upstream
+ * HMCL: mark the version as a modpack <em>before</em> the install runs so
+ * {@link HMCLGameRepository#getRunDirectory(String)} routes overrides into
+ * {@code versions/<name>/} (VERSION_FOLDER mode), then materialise the
+ * VERSION_FOLDER setting and drop the in-memory mark on success.
  */
 public final class CofeMineMrpackInstaller {
 
     private CofeMineMrpackInstaller() {
     }
 
-    /**
-     * Build a task that downloads the {@code .mrpack} from the panel and
-     * installs it as a fresh version inside {@code profile}.
-     *
-     * @param profile      target HMCL profile (game directory + version repo)
-     * @param mrpackUrl    direct {@code /api/p/<token>.mrpack} URL
-     * @param versionName  version id under which the pack is registered
-     */
     public static Task<Void> createInstallTask(Profile profile, String mrpackUrl, String versionName) {
-        // Allocate a per-invocation working dir lazily so IOException flows
-        // through the task chain instead of being thrown at configuration.
+        HMCLGameRepository repository = profile.getRepository();
+
+        // CRITICAL: mark the version as a modpack *before* the install
+        // task is constructed. ModrinthInstallTask captures
+        // repository.getRunDirectory(name) at construction time; without
+        // the mark it returns the profile root (ROOT_FOLDER mode) and the
+        // .mrpack overrides get dumped there instead of into
+        // versions/<name>/.
+        repository.markVersionAsModpack(versionName);
+
         java.util.concurrent.atomic.AtomicReference<Path> workDirRef = new java.util.concurrent.atomic.AtomicReference<>();
         java.util.concurrent.atomic.AtomicReference<Path> mrpackFileRef = new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -81,13 +89,38 @@ public final class CofeMineMrpackInstaller {
             return new ModrinthInstallTask(dm, file, modpack, manifest, versionName, null);
         });
 
+        Task<Void> finalize = Task.runAsync("CofeMine .mrpack finalize", Schedulers.io(), () -> {
+            // Persist the VERSION_FOLDER setting so the modpack stays
+            // isolated even after we drop the in-memory mark, then drop
+            // the mark so the in-memory bookkeeping mirrors disk state.
+            try {
+                repository.refreshVersions();
+                VersionSetting vs = repository.specializeVersionSetting(versionName);
+                if (vs != null) {
+                    vs.setGameDirType(GameDirectoryType.VERSION_FOLDER);
+                }
+            } finally {
+                repository.undoMark(versionName);
+            }
+        });
+
         return prepare
                 .thenComposeAsync(download)
                 .thenComposeAsync(install)
+                .thenComposeAsync(finalize)
                 .whenComplete(Schedulers.io(), ex -> {
                     Path workDir = workDirRef.get();
                     if (workDir != null) {
                         FileUtils.deleteDirectoryQuietly(workDir);
+                    }
+                    if (ex != null) {
+                        // Install failed — drop the mark so a retry starts
+                        // from a clean slate.
+                        try {
+                            repository.undoMark(versionName);
+                        } catch (Exception cleanupEx) {
+                            LOG.warning("Failed to undo modpack mark for " + versionName, cleanupEx);
+                        }
                     }
                 });
     }
