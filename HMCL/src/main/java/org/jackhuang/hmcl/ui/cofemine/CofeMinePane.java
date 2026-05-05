@@ -24,6 +24,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -34,13 +35,16 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
-import javafx.stage.DirectoryChooser;
-import org.jackhuang.hmcl.cofemine.CofeMineInstallPlan;
-import org.jackhuang.hmcl.cofemine.CofeMineModpackManifest;
-import org.jackhuang.hmcl.cofemine.CofeMineModpackService;
+import org.jackhuang.hmcl.cofemine.CofeMineInstalledPack;
+import org.jackhuang.hmcl.cofemine.CofeMineMrpackInstaller;
+import org.jackhuang.hmcl.cofemine.CofeMinePanelClient;
+import org.jackhuang.hmcl.cofemine.CofeMinePanelPack;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatus;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatusService;
+import org.jackhuang.hmcl.game.HMCLGameRepository;
 import org.jackhuang.hmcl.setting.Profile;
+import org.jackhuang.hmcl.setting.Profiles;
+import org.jackhuang.hmcl.task.Task;
 import org.jackhuang.hmcl.task.TaskExecutor;
 import org.jackhuang.hmcl.task.TaskListener;
 import org.jackhuang.hmcl.ui.Controllers;
@@ -52,14 +56,18 @@ import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.TaskCancellationAction;
 import org.jackhuang.hmcl.util.io.FileUtils;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Locale;
+import java.util.UUID;
 
 import static org.jackhuang.hmcl.setting.ConfigHolder.config;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
+import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 
 public final class CofeMinePane extends VBox {
     private static final String SITE_URL = "https://cofemine.ru";
@@ -70,7 +78,6 @@ public final class CofeMinePane extends VBox {
     private static final javafx.util.Duration TOGGLE_DURATION = javafx.util.Duration.millis(240);
 
     private CofeMineServerStatusService statusService;
-    private final CofeMineModpackService modpackService = new CofeMineModpackService();
     private final javafx.beans.value.ChangeListener<Object> serverListener = (obs, oldVal, newVal) -> rebuildStatusService();
     private final javafx.beans.value.ChangeListener<CofeMineServerStatus> statusListener = (obs, oldVal, newVal) -> updateStatus(newVal);
 
@@ -78,9 +85,9 @@ public final class CofeMinePane extends VBox {
     private final Label statusLabel = new Label();
     private final Label statusDetail = new Label();
     private final Label statusMotd = new Label();
-    private final Label modpackPathLabel = new Label();
-    private final JFXButton modpackButton = new JFXButton();
-    private final JFXButton openFolderButton = new JFXButton(i18n("cofemine.modpack.open_folder"));
+    private final JFXButton browsePackButton = new JFXButton();
+    private final VBox installedPacksContainer = new VBox(8);
+    private final Label noPacksLabel = new Label(i18n("cofemine.modpack.none_installed"));
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
     private final BooleanProperty expanded = new SimpleBooleanProperty(true);
     private final VBox expandedPane;
@@ -131,28 +138,25 @@ public final class CofeMinePane extends VBox {
 
         JFXButton siteButton = new JFXButton(i18n("cofemine.site"));
         siteButton.getStyleClass().add("cofemine-action-button");
+        siteButton.setMaxWidth(Double.MAX_VALUE);
         siteButton.setOnAction(event -> FXUtils.openLink(SITE_URL));
 
-        modpackButton.getStyleClass().add("cofemine-action-button");
-        modpackButton.setOnAction(event -> onModpackAction());
-
-        openFolderButton.getStyleClass().add("cofemine-secondary-button");
-        openFolderButton.setOnAction(event -> resolveInstancePath().ifPresent(FXUtils::openFolder));
-
-        VBox actionBox = new VBox(8, siteButton, modpackButton, openFolderButton);
-        actionBox.setFillWidth(true);
-        siteButton.setMaxWidth(Double.MAX_VALUE);
-        modpackButton.setMaxWidth(Double.MAX_VALUE);
-        openFolderButton.setMaxWidth(Double.MAX_VALUE);
+        browsePackButton.setText(i18n("cofemine.modpack.browse"));
+        browsePackButton.setGraphic(SVG.DOWNLOAD.createIcon(16));
+        browsePackButton.getStyleClass().add("cofemine-action-button");
+        browsePackButton.setMaxWidth(Double.MAX_VALUE);
+        browsePackButton.setOnAction(event -> openPickerDialog());
 
         Label modpackTitle = new Label(i18n("cofemine.modpack.title"));
         modpackTitle.getStyleClass().add("cofemine-subtitle");
-        modpackPathLabel.getStyleClass().add("cofemine-subtitle");
 
-        VBox modpackBox = new VBox(6, modpackTitle, modpackPathLabel, actionBox);
+        noPacksLabel.getStyleClass().add("cofemine-subtitle");
+        installedPacksContainer.setFillWidth(true);
+
+        VBox modpackBox = new VBox(8, modpackTitle, browsePackButton, installedPacksContainer);
         modpackBox.setPadding(new Insets(4, 0, 0, 0));
 
-        expandedPane = new VBox(10, headerLine, statusBox, modpackBox);
+        expandedPane = new VBox(10, headerLine, statusBox, siteButton, modpackBox);
         expandedPane.getStyleClass().addAll("card", "cofemine-panel");
 
         var collapsedIcon = new ImageView(FXUtils.newBuiltinImage(LOGO_PATH, LOGO_SIZE, LOGO_SIZE, true, true));
@@ -173,19 +177,19 @@ public final class CofeMinePane extends VBox {
         getChildren().setAll(container);
 
         rebuildStatusService();
-        updateModpackState();
+        rebuildPackCards();
 
         expanded.addListener((obs, oldVal, newVal) -> togglePane(newVal));
         togglePane(expanded.get());
 
-        busy.addListener((obs, oldVal, newVal) -> {
-            modpackButton.setDisable(newVal);
-            openFolderButton.setDisable(newVal || resolveInstancePath().isEmpty());
-        });
+        busy.addListener((obs, oldVal, newVal) -> browsePackButton.setDisable(newVal));
 
         config().cofemineServerHostProperty().addListener(serverListener);
         config().cofemineServerPortProperty().addListener(serverListener);
+        config().getCofeminePacks().addListener((ListChangeListener<CofeMineInstalledPack>) change -> rebuildPackCards());
     }
+
+    // ==== Server status (unchanged from previous version) =================
 
     private void updateStatus(CofeMineServerStatus status) {
         statusDot.getStyleClass().setAll("cofemine-status-dot");
@@ -211,7 +215,6 @@ public final class CofeMinePane extends VBox {
         if (!online && status != null && status.error() != null) {
             details.add(status.error());
         }
-
         statusDetail.setText(details.isEmpty() ? "" : String.join(" • ", details));
 
         String motd = status != null ? status.motd() : null;
@@ -234,6 +237,220 @@ public final class CofeMinePane extends VBox {
         statusService.start();
     }
 
+    // ==== Pack list rendering =============================================
+
+    private void rebuildPackCards() {
+        installedPacksContainer.getChildren().clear();
+        if (config().getCofeminePacks().isEmpty()) {
+            installedPacksContainer.getChildren().add(noPacksLabel);
+            return;
+        }
+        for (CofeMineInstalledPack pack : config().getCofeminePacks()) {
+            installedPacksContainer.getChildren().add(buildPackCard(pack));
+        }
+    }
+
+    private javafx.scene.Node buildPackCard(CofeMineInstalledPack pack) {
+        Label name = new Label(pack.getDisplayName());
+        name.getStyleClass().add("strong");
+
+        String mc = pack.getMinecraft() != null ? pack.getMinecraft() : "?";
+        String loader = pack.getLoader() != null ? pack.getLoader() : "vanilla";
+        String version = pack.getLoaderVersion() != null ? " " + pack.getLoaderVersion() : "";
+        Label meta = new Label(i18n("cofemine.modpack.pick.meta", mc, loader + version));
+        meta.getStyleClass().add("cofemine-subtitle");
+
+        JFXButton update = new JFXButton();
+        update.setGraphic(SVG.UPDATE.createIcon(14));
+        update.getStyleClass().add("toggle-icon-tiny");
+        FXUtils.installFastTooltip(update, i18n("cofemine.modpack.update"));
+        update.setOnAction(e -> updatePack(pack));
+
+        JFXButton openFolder = new JFXButton();
+        openFolder.setGraphic(SVG.FOLDER.createIcon(14));
+        openFolder.getStyleClass().add("toggle-icon-tiny");
+        FXUtils.installFastTooltip(openFolder, i18n("cofemine.modpack.open_folder"));
+        openFolder.setOnAction(e -> {
+            Path path = FileUtils.tryGetPath(pack.getInstancePath()).orElse(null);
+            if (path != null) FXUtils.openFolder(path);
+        });
+
+        JFXButton delete = new JFXButton();
+        delete.setGraphic(SVG.DELETE.createIcon(14));
+        delete.getStyleClass().add("toggle-icon-tiny");
+        FXUtils.installFastTooltip(delete, i18n("cofemine.modpack.delete"));
+        delete.setOnAction(e -> deletePack(pack));
+
+        HBox actions = new HBox(4, update, openFolder, delete);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox text = new VBox(2, name, meta);
+        HBox row = new HBox(8, text, actions);
+        HBox.setHgrow(text, Priority.ALWAYS);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("cofemine-pack-card");
+        return row;
+    }
+
+    // ==== Install / update / delete actions ===============================
+
+    private void openPickerDialog() {
+        if (busy.get()) return;
+        String panelUrl = config().getCofeminePanelBaseUrl();
+        if (StringUtils.isBlank(panelUrl)) {
+            Controllers.dialog(i18n("cofemine.modpack.panel_url.missing"),
+                    i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+            return;
+        }
+        CofeMinePanelClient client = new CofeMinePanelClient(panelUrl);
+        new CofeMinePackPickerDialog(client, this::installPanelPack).show();
+    }
+
+    private void installPanelPack(CofeMinePanelPack panelPack) {
+        Profile profile = Profiles.getSelectedProfile();
+        if (profile == null) {
+            Controllers.dialog(i18n("cofemine.modpack.no_profile"),
+                    i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+            return;
+        }
+
+        String versionName = makeUniqueVersionName(profile, panelPack.getDisplayName());
+        Path instanceDir = profile.getRepository().getRunDirectory(versionName);
+
+        busy.set(true);
+        Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
+                profile, panelPack.getMrpackUrl(), versionName);
+        TaskExecutor executor = task.executor();
+
+        executor.addTaskListener(new TaskListener() {
+            @Override
+            public void onStop(boolean success, TaskExecutor executor) {
+                Platform.runLater(() -> {
+                    busy.set(false);
+                    if (success) {
+                        CofeMineInstalledPack record = new CofeMineInstalledPack(
+                                panelPack.getId(),
+                                panelPack.getDisplayName(),
+                                instanceDir.toString(),
+                                versionName,
+                                panelPack.getMrpackUrl(),
+                                panelPack.getMetadataUrl(),
+                                panelPack.getMinecraft(),
+                                panelPack.getLoader(),
+                                panelPack.getLoaderVersion(),
+                                Instant.now().toString(),
+                                panelPack.getUpdatedAt()
+                        );
+                        replacePackInConfig(record);
+                        profile.getRepository().refreshVersions();
+                        profile.setSelectedVersion(versionName);
+                    } else if (executor.getException() != null) {
+                        Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
+                                i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+                    }
+                });
+            }
+        });
+
+        Controllers.taskDialog(executor,
+                i18n("cofemine.modpack.installing"),
+                TaskCancellationAction.NORMAL);
+        executor.start();
+    }
+
+    private void updatePack(CofeMineInstalledPack pack) {
+        if (busy.get()) return;
+        Profile profile = Profiles.getSelectedProfile();
+        if (profile == null) return;
+
+        busy.set(true);
+        Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
+                profile, pack.getMrpackUrl(), pack.getVersionName());
+        TaskExecutor executor = task.executor();
+
+        executor.addTaskListener(new TaskListener() {
+            @Override
+            public void onStop(boolean success, TaskExecutor executor) {
+                Platform.runLater(() -> {
+                    busy.set(false);
+                    if (success) {
+                        pack.setUpdatedAt(Instant.now().toString());
+                        // Mutating in place; trigger list update by replace.
+                        replacePackInConfig(pack);
+                        profile.getRepository().refreshVersions();
+                    } else if (executor.getException() != null) {
+                        Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
+                                i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+                    }
+                });
+            }
+        });
+
+        Controllers.taskDialog(executor,
+                i18n("cofemine.modpack.updating"),
+                TaskCancellationAction.NORMAL);
+        executor.start();
+    }
+
+    private void deletePack(CofeMineInstalledPack pack) {
+        Controllers.confirm(
+                i18n("cofemine.modpack.delete.confirm", pack.getDisplayName()),
+                i18n("cofemine.modpack.delete"),
+                () -> performDelete(pack),
+                null);
+    }
+
+    private void performDelete(CofeMineInstalledPack pack) {
+        // Remove the version from the repository so HMCL forgets about it,
+        // then drop the bookkeeping entry. We deliberately leave the
+        // {@code .minecraft/saves}-equivalent in place because the runtime
+        // dir is shared with the profile.
+        Profile profile = Profiles.getSelectedProfile();
+        if (profile != null) {
+            try {
+                profile.getRepository().removeVersionFromDisk(pack.getVersionName());
+            } catch (Exception e) {
+                LOG.warning("Failed to remove version " + pack.getVersionName(), e);
+            }
+        }
+        Path instanceDir = FileUtils.tryGetPath(pack.getInstancePath()).orElse(null);
+        if (instanceDir != null && Files.isDirectory(instanceDir)) {
+            try {
+                FileUtils.deleteDirectory(instanceDir);
+            } catch (Exception e) {
+                LOG.warning("Failed to delete pack directory " + instanceDir, e);
+            }
+        }
+        config().getCofeminePacks().removeIf(p -> java.util.Objects.equals(p.getId(), pack.getId()));
+    }
+
+    private void replacePackInConfig(CofeMineInstalledPack record) {
+        var packs = config().getCofeminePacks();
+        for (int i = 0; i < packs.size(); i++) {
+            if (java.util.Objects.equals(packs.get(i).getId(), record.getId())) {
+                packs.set(i, record);
+                return;
+            }
+        }
+        packs.add(record);
+    }
+
+    private static String makeUniqueVersionName(Profile profile, String preferred) {
+        String base = StringUtils.isBlank(preferred) ? "CofeMine" : preferred.trim();
+        base = base.replaceAll("[^A-Za-z0-9._-]", "-");
+        if (!HMCLGameRepository.isValidVersionId(base)) {
+            base = "CofeMine-" + UUID.randomUUID().toString().substring(0, 8);
+        }
+        String candidate = base;
+        int index = 1;
+        while (profile.getRepository().versionIdConflicts(candidate)) {
+            candidate = base + "-" + index++;
+        }
+        return candidate.toLowerCase(Locale.ROOT).startsWith("cofemine") ? candidate : "CofeMine-" + candidate;
+    }
+
+    // ==== Collapse / expand animation (verbatim from previous version) ===
+
     private void togglePane(boolean showExpanded) {
         if (!toggleInitialized || !AnimationUtils.isAnimationEnabled()) {
             expandedPane.setVisible(showExpanded);
@@ -251,13 +468,9 @@ public final class CofeMinePane extends VBox {
         collapsedPane.setVisible(true);
 
         double panelWidth = getWidth() > 0 ? getWidth() : getPrefWidth();
-        if (panelWidth <= 0) {
-            panelWidth = 320;
-        }
+        if (panelWidth <= 0) panelWidth = 320;
         double panelHeight = expandedPane.getHeight() > 0 ? expandedPane.getHeight() : expandedPane.prefHeight(-1);
-        if (panelHeight <= 0) {
-            panelHeight = 200;
-        }
+        if (panelHeight <= 0) panelHeight = 200;
         double shiftX = panelWidth * (1 - COLLAPSED_SCALE) / 2;
         double shiftY = panelHeight * (1 - COLLAPSED_SCALE) / 2;
 
@@ -335,174 +548,5 @@ public final class CofeMinePane extends VBox {
         }
 
         FXUtils.playAnimation(this, "cofemine-toggle", animation);
-    }
-
-    private void updateModpackState() {
-        Optional<Path> instancePath = resolveInstancePath();
-        boolean installed = instancePath.isPresent() && CofeMineModpackService.isInstalled(instancePath.get());
-
-        if (installed) {
-            modpackButton.setText(i18n("cofemine.modpack.update"));
-            modpackButton.setGraphic(SVG.UPDATE.createIcon(16));
-            modpackPathLabel.setText(i18n("cofemine.modpack.installed_at", instancePath.get().toString()));
-            openFolderButton.setDisable(false);
-        } else {
-            modpackButton.setText(i18n("cofemine.modpack.install"));
-            modpackButton.setGraphic(SVG.DOWNLOAD.createIcon(16));
-            modpackPathLabel.setText(i18n("cofemine.modpack.not_installed"));
-            openFolderButton.setDisable(true);
-        }
-    }
-
-    private Optional<Path> resolveInstancePath() {
-        return FileUtils.tryGetPath(config().getCofemineInstancePath());
-    }
-
-    private void onModpackAction() {
-        if (busy.get()) {
-            return;
-        }
-
-        Optional<Path> instancePath = resolveInstancePath();
-        boolean installed = instancePath.isPresent() && CofeMineModpackService.isInstalled(instancePath.get());
-
-        if (!installed) {
-            DirectoryChooser chooser = new DirectoryChooser();
-            chooser.setTitle(i18n("cofemine.modpack.choose_folder"));
-            if (instancePath.isPresent()) {
-                chooser.setInitialDirectory(instancePath.get().toFile());
-            }
-            var selected = chooser.showDialog(Controllers.getStage());
-            if (selected == null) {
-                return;
-            }
-            startModpackInstallWizard(selected.toPath());
-        } else {
-            runModpackTask(Mode.UPDATE, instancePath.get());
-        }
-    }
-
-    private void startModpackInstallWizard(Path targetDir) {
-        String zipUrl = config().getCofemineModpackZipUrl();
-        String manifestUrl = config().getCofemineModpackManifestUrl();
-        if (StringUtils.isBlank(zipUrl)) {
-            Controllers.dialog(i18n("cofemine.modpack.url.missing"),
-                    i18n("message.error"),
-                    MessageDialogPane.MessageType.ERROR);
-            return;
-        }
-        modpackService.loadManifestAsync(manifestUrl).whenCompleteAsync((manifest, error) -> {
-            CofeMineModpackManifest resolvedManifest = manifest;
-            Profile profile = CofeMineModpackService.ensureProfile(targetDir);
-            boolean preferArchiveDescriptor = CofeMineModpackService.isDefaultModpackUrl(zipUrl);
-            if (preferArchiveDescriptor) {
-                runModpackInstallDirect(profile, targetDir, zipUrl, manifestUrl, resolvedManifest);
-                return;
-            }
-            CofeMineModpackInstallWizardProvider provider = new CofeMineModpackInstallWizardProvider(
-                    profile,
-                    targetDir,
-                    zipUrl,
-                    manifestUrl,
-                    resolvedManifest,
-                    modpackService,
-                    preferArchiveDescriptor,
-                    busy,
-                    () -> {
-                        config().setCofemineInstancePath(targetDir.toString());
-                        CofeMineModpackService.ensureProfile(targetDir);
-                        updateModpackState();
-                    }
-            );
-            Controllers.getDecorator().startWizard(provider, i18n("cofemine.modpack.title"));
-        }, Platform::runLater);
-    }
-
-    private void runModpackInstallDirect(Profile profile, Path targetDir, String zipUrl, String manifestUrl, CofeMineModpackManifest manifest) {
-        busy.set(true);
-        try {
-            CofeMineInstallPlan plan = new CofeMineInstallPlan(null, null, List.of(), true);
-            TaskExecutor executor = modpackService.createInstallTask(profile, targetDir, zipUrl, manifest, manifestUrl, plan).executor();
-            executor.addTaskListener(new TaskListener() {
-                @Override
-                public void onStop(boolean success, TaskExecutor executor) {
-                    Platform.runLater(() -> {
-                        busy.set(false);
-                        if (success) {
-                            config().setCofemineInstancePath(targetDir.toString());
-                            CofeMineModpackService.ensureProfile(targetDir);
-                            updateModpackState();
-                        } else if (executor.getException() != null) {
-                            Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
-                                    i18n("message.error"),
-                                    MessageDialogPane.MessageType.ERROR);
-                        }
-                    });
-                }
-            });
-
-            Controllers.taskDialog(executor,
-                    i18n("cofemine.modpack.installing"),
-                    TaskCancellationAction.NORMAL);
-            executor.start();
-        } catch (Exception e) {
-            busy.set(false);
-            Controllers.dialog(StringUtils.getStackTrace(e),
-                    i18n("message.error"),
-                    MessageDialogPane.MessageType.ERROR);
-        }
-    }
-
-    private void runModpackTask(Mode mode, Path targetDir) {
-        if (mode == Mode.INSTALL) {
-            return;
-        }
-        String zipUrl = config().getCofemineModpackZipUrl();
-        String manifestUrl = config().getCofemineModpackManifestUrl();
-        if (StringUtils.isBlank(zipUrl)) {
-            Controllers.dialog(i18n("cofemine.modpack.url.missing"),
-                    i18n("message.error"),
-                    MessageDialogPane.MessageType.ERROR);
-            return;
-        }
-        busy.set(true);
-
-        modpackService.loadManifestAsync(manifestUrl).whenCompleteAsync((manifest, error) -> {
-            CofeMineModpackManifest resolvedManifest = manifest;
-            try {
-                TaskExecutor executor = modpackService.createUpdateTask(targetDir, zipUrl, resolvedManifest, manifestUrl).executor();
-
-                executor.addTaskListener(new TaskListener() {
-                    @Override
-                    public void onStop(boolean success, TaskExecutor executor) {
-                        Platform.runLater(() -> {
-                            busy.set(false);
-                            if (success) {
-                                updateModpackState();
-                            } else if (executor.getException() != null) {
-                                Controllers.dialog(StringUtils.getStackTrace(executor.getException()),
-                                        i18n("message.error"),
-                                        MessageDialogPane.MessageType.ERROR);
-                            }
-                        });
-                    }
-                });
-
-                Controllers.taskDialog(executor,
-                        i18n("cofemine.modpack.updating"),
-                        TaskCancellationAction.NORMAL);
-                executor.start();
-            } catch (Exception e) {
-                busy.set(false);
-                Controllers.dialog(StringUtils.getStackTrace(e),
-                        i18n("message.error"),
-                        MessageDialogPane.MessageType.ERROR);
-            }
-        }, Platform::runLater);
-    }
-
-    private enum Mode {
-        INSTALL,
-        UPDATE
     }
 }

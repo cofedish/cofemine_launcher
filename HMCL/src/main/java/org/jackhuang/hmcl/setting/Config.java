@@ -537,6 +537,41 @@ public final class Config extends ObservableSetting {
         this.cofemineModpackManifestUrl.set(cofemineModpackManifestUrl);
     }
 
+    /// Base URL of the CofeMine Panel (the place that serves
+    /// `/api/p/index.json` and `/api/p/<token>.mrpack`). Replaces the old
+    /// single-link Yandex.Disk URL: panel exposes a list of available
+    /// modpacks, the launcher fetches that list and shows it in a picker.
+    @SerializedName("cofeminePanelBaseUrl")
+    private final StringProperty cofeminePanelBaseUrl = new SimpleStringProperty("https://panel.cofemine.ru");
+
+    public StringProperty cofeminePanelBaseUrlProperty() {
+        return cofeminePanelBaseUrl;
+    }
+
+    public String getCofeminePanelBaseUrl() {
+        return cofeminePanelBaseUrl.get();
+    }
+
+    public void setCofeminePanelBaseUrl(String cofeminePanelBaseUrl) {
+        this.cofeminePanelBaseUrl.set(cofeminePanelBaseUrl);
+    }
+
+    /// Tracks every pack the user installed via the panel: pack id, the
+    /// chosen instance directory, the original mrpack URL (so we can
+    /// re-download for "Update"), and the version snapshot from the
+    /// last install. Persisted as a JSON array.
+    @SerializedName("cofeminePacks")
+    private final javafx.collections.ObservableList<org.jackhuang.hmcl.cofemine.CofeMineInstalledPack> cofeminePacks =
+            javafx.collections.FXCollections.observableArrayList();
+
+    public javafx.collections.ObservableList<org.jackhuang.hmcl.cofemine.CofeMineInstalledPack> getCofeminePacks() {
+        return cofeminePacks;
+    }
+
+    public void setCofeminePacks(java.util.List<org.jackhuang.hmcl.cofemine.CofeMineInstalledPack> packs) {
+        cofeminePacks.setAll(packs == null ? java.util.List.of() : packs);
+    }
+
     // Networks
 
     @SerializedName("autoDownloadThreads")

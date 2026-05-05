@@ -254,17 +254,17 @@ public final class SettingsPage extends ScrollPane {
                 serverPortPane.setRight(serverPortField);
                 BorderPane.setAlignment(serverPortField, Pos.CENTER_RIGHT);
 
-                BorderPane modpackUrlPane = new BorderPane();
-                Label modpackUrlLabel = new Label(i18n("cofemine.settings.modpack_url"));
-                modpackUrlPane.setLeft(modpackUrlLabel);
-                JFXTextField modpackUrlField = new JFXTextField();
-                modpackUrlField.setPromptText(i18n("cofemine.settings.modpack_url.hint"));
-                FXUtils.setLimitWidth(modpackUrlField, 420);
-                FXUtils.bindString(modpackUrlField, config().cofemineModpackZipUrlProperty());
-                modpackUrlPane.setRight(modpackUrlField);
-                BorderPane.setAlignment(modpackUrlField, Pos.CENTER_RIGHT);
+                BorderPane panelUrlPane = new BorderPane();
+                Label panelUrlLabel = new Label(i18n("cofemine.settings.panel_url"));
+                panelUrlPane.setLeft(panelUrlLabel);
+                JFXTextField panelUrlField = new JFXTextField();
+                panelUrlField.setPromptText(i18n("cofemine.settings.panel_url.hint"));
+                FXUtils.setLimitWidth(panelUrlField, 420);
+                FXUtils.bindString(panelUrlField, config().cofeminePanelBaseUrlProperty());
+                panelUrlPane.setRight(panelUrlField);
+                BorderPane.setAlignment(panelUrlField, Pos.CENTER_RIGHT);
 
-                content.getChildren().setAll(serverHostPane, serverPortPane, modpackUrlPane);
+                content.getChildren().setAll(serverHostPane, serverPortPane, panelUrlPane);
                 cofeminePane.getContent().add(content);
 
                 settingsPane.getContent().add(cofeminePane);
