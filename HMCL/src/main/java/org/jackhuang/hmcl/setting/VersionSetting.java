@@ -666,7 +666,7 @@ public final class VersionSetting implements Cloneable, Observable {
      * 1 - Hide the launcher when the game starts.<br/>
      * 2 - Keep the launcher open.<br/>
      */
-    private final ObjectProperty<LauncherVisibility> launcherVisibilityProperty = new SimpleObjectProperty<>(this, "launcherVisibility", LauncherVisibility.HIDE);
+    private final ObjectProperty<LauncherVisibility> launcherVisibilityProperty = new SimpleObjectProperty<>(this, "launcherVisibility", LauncherVisibility.HIDE_AND_REOPEN);
 
     public ObjectProperty<LauncherVisibility> launcherVisibilityProperty() {
         return launcherVisibilityProperty;
@@ -863,7 +863,7 @@ public final class VersionSetting implements Cloneable, Observable {
             vs.setNotPatchNatives(Optional.ofNullable(obj.get("notPatchNatives")).map(JsonElement::getAsBoolean).orElse(false));
             vs.setShowLogs(Optional.ofNullable(obj.get("showLogs")).map(JsonElement::getAsBoolean).orElse(false));
             vs.setEnableDebugLogOutput(Optional.ofNullable(obj.get("enableDebugLogOutput")).map(JsonElement::getAsBoolean).orElse(false));
-            vs.setLauncherVisibility(parseJsonPrimitive(obj.getAsJsonPrimitive("launcherVisibility"), LauncherVisibility.class, LauncherVisibility.HIDE));
+            vs.setLauncherVisibility(parseJsonPrimitive(obj.getAsJsonPrimitive("launcherVisibility"), LauncherVisibility.class, LauncherVisibility.HIDE_AND_REOPEN));
             vs.setProcessPriority(parseJsonPrimitive(obj.getAsJsonPrimitive("processPriority"), ProcessPriority.class, ProcessPriority.NORMAL));
             vs.setUseNativeGLFW(Optional.ofNullable(obj.get("useNativeGLFW")).map(JsonElement::getAsBoolean).orElse(false));
             vs.setUseNativeOpenAL(Optional.ofNullable(obj.get("useNativeOpenAL")).map(JsonElement::getAsBoolean).orElse(false));
