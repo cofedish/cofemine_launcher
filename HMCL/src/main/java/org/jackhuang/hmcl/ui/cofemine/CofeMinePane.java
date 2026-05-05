@@ -56,7 +56,6 @@ import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.TaskCancellationAction;
 import org.jackhuang.hmcl.util.io.FileUtils;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -271,7 +270,18 @@ public final class CofeMinePane extends VBox {
         openFolder.getStyleClass().add("toggle-icon-tiny");
         FXUtils.installFastTooltip(openFolder, i18n("cofemine.modpack.open_folder"));
         openFolder.setOnAction(e -> {
-            Path path = FileUtils.tryGetPath(pack.getInstancePath()).orElse(null);
+            // Always re-resolve through the repository: a modpack version's
+            // run directory depends on flags that aren't stable at install
+            // time (HMCLGameRepository.getGameDirectoryType flips to
+            // VERSION_FOLDER once the version is tagged as a modpack).
+            Profile profile = Profiles.getSelectedProfile();
+            Path path = null;
+            if (profile != null && profile.getRepository().hasVersion(pack.getVersionName())) {
+                path = profile.getRepository().getRunDirectory(pack.getVersionName());
+            }
+            if (path == null) {
+                path = FileUtils.tryGetPath(pack.getInstancePath()).orElse(null);
+            }
             if (path != null) FXUtils.openFolder(path);
         });
 
@@ -315,7 +325,11 @@ public final class CofeMinePane extends VBox {
         }
 
         String versionName = makeUniqueVersionName(profile, panelPack.getDisplayName());
-        Path instanceDir = profile.getRepository().getRunDirectory(versionName);
+        // We capture the instance dir AFTER install: ModrinthInstallTask
+        // marks the new version as a modpack, which flips
+        // HMCLGameRepository.getGameDirectoryType() from ROOT_FOLDER to
+        // VERSION_FOLDER, so the run directory only resolves correctly
+        // post-install.
 
         busy.set(true);
         Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
@@ -328,6 +342,7 @@ public final class CofeMinePane extends VBox {
                 Platform.runLater(() -> {
                     busy.set(false);
                     if (success) {
+                        Path instanceDir = profile.getRepository().getRunDirectory(versionName);
                         CofeMineInstalledPack record = new CofeMineInstalledPack(
                                 panelPack.getId(),
                                 panelPack.getDisplayName(),
@@ -401,24 +416,18 @@ public final class CofeMinePane extends VBox {
     }
 
     private void performDelete(CofeMineInstalledPack pack) {
-        // Remove the version from the repository so HMCL forgets about it,
-        // then drop the bookkeeping entry. We deliberately leave the
-        // {@code .minecraft/saves}-equivalent in place because the runtime
-        // dir is shared with the profile.
+        // Modpack versions live under <profile>/versions/<name>/ in
+        // VERSION_FOLDER mode, so removing the version from disk is enough
+        // — HMCL deletes the version directory tree (including mods,
+        // configs, saves, etc.) on its own. We do *not* delete the stored
+        // instancePath blindly: in shared-root setups that path could be
+        // the profile's gameDir, and wiping it would nuke unrelated data.
         Profile profile = Profiles.getSelectedProfile();
         if (profile != null) {
             try {
                 profile.getRepository().removeVersionFromDisk(pack.getVersionName());
             } catch (Exception e) {
                 LOG.warning("Failed to remove version " + pack.getVersionName(), e);
-            }
-        }
-        Path instanceDir = FileUtils.tryGetPath(pack.getInstancePath()).orElse(null);
-        if (instanceDir != null && Files.isDirectory(instanceDir)) {
-            try {
-                FileUtils.deleteDirectory(instanceDir);
-            } catch (Exception e) {
-                LOG.warning("Failed to delete pack directory " + instanceDir, e);
             }
         }
         config().getCofeminePacks().removeIf(p -> java.util.Objects.equals(p.getId(), pack.getId()));
