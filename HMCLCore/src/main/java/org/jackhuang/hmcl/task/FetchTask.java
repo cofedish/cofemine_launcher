@@ -48,7 +48,12 @@ import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 
 public abstract class FetchTask<T> extends Task<T> {
 
-    protected static final int DEFAULT_RETRY = 3;
+    // BMCLAPI / Mojang mirrors occasionally cut streams mid-download from
+    // RU/CIS networks; 3 retries was the upstream default but we still
+    // observed user-visible "EOF reached while reading" failures on
+    // 200-MB modpack installer JARs. Bump the budget so transient
+    // mirror flakes don't end up in a dialog.
+    protected static final int DEFAULT_RETRY = 6;
 
     protected final List<URI> uris;
     protected int retry = DEFAULT_RETRY;
