@@ -428,14 +428,19 @@ fun Exec.configureJpackage(
         // the self-check only for installed builds — portable JAR users
         // aren't affected.
         args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
-        // Force JavaFX to pick a GPU pipeline (Direct3D on Windows, Metal on
-        // macOS, GL on Linux). Without this, Prism sometimes falls back to
-        // the software rasterizer even on modern GPUs, which shows up as a
-        // perceived 30fps cap when moving/dragging the launcher window on
-        // high-refresh-rate monitors.
+        // Force JavaFX to pick a GPU pipeline (Direct3D on Windows, Metal
+        // on macOS, GL on Linux). Without this Prism sometimes falls back
+        // to the software rasterizer even on modern GPUs, which shows up
+        // as a ~30fps cap when dragging the launcher window on high-
+        // refresh-rate monitors.
+        //
+        // We intentionally do NOT set `javafx.animation.fullspeed=true`:
+        // combined with vsync it produced stutter on some setups (uncapped
+        // pulse races vsync and yields irregular frame pacing). A steady
+        // 60Hz pulse synchronised to monitor vblank looks smoother than an
+        // uncapped pulse fighting the compositor.
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
-        args += listOf("--java-options", "-Djavafx.animation.fullspeed=true")
         args += extraArgs
 
         commandLine(args)
@@ -572,10 +577,10 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         // the user's graphics stack.
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
-        // Lift the JavaFX pulse throttle so undecorated-window dragging
-        // isn't capped at 60 Hz on 120/144/180 Hz monitors. Combined with
-        // prism.vsync=true the effective rate tracks the monitor refresh.
-        args += listOf("--java-options", "-Djavafx.animation.fullspeed=true")
+        // fullspeed=true was tried for higher-Hz monitors but caused
+        // stutter when combined with vsync — uncapped pulse + vsync race
+        // each other and frame pacing becomes uneven. Keep the default
+        // 60Hz pulse (vsync clamps to monitor refresh kratno).
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
