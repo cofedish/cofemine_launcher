@@ -26,7 +26,6 @@ import org.jackhuang.hmcl.Metadata;
 import org.jackhuang.hmcl.event.EventBus;
 import org.jackhuang.hmcl.event.RefreshedVersionsEvent;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -101,9 +100,21 @@ public final class Profiles {
 
     private static void checkProfiles() {
         if (profiles.isEmpty()) {
-            Profile current = new Profile(Profiles.DEFAULT_PROFILE, Path.of(".minecraft"), new VersionSetting(), null, true);
+            // Upstream HMCL shipped two seed profiles: a "Default" profile
+            // with a *relative* `.minecraft` path and a "Home" profile at
+            // Metadata.MINECRAFT_DIRECTORY. The relative path resolves
+            // against the launcher's CWD; for jpackage-installed builds
+            // launched from /Applications (macOS) or via a desktop entry
+            // (Linux) CWD ends up at the filesystem root and the launcher
+            // tried to write to `/.minecraft` — which fails for non-root
+            // users and dumps data outside the user's home anyway.
+            //
+            // Drop the relative-path profile and seed only the home
+            // profile, which uses the OS-appropriate location
+            // (%APPDATA%/.minecraft, ~/.minecraft, or
+            // ~/Library/Application Support/minecraft).
             Profile home = new Profile(Profiles.HOME_PROFILE, Metadata.MINECRAFT_DIRECTORY);
-            Platform.runLater(() -> profiles.addAll(current, home));
+            Platform.runLater(() -> profiles.add(home));
         }
     }
 

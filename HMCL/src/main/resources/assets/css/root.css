@@ -617,9 +617,26 @@
     -fx-padding: 0.7em 0.8em;
 }
 
+/* Primary dialog action — filled pill so it visibly stands out against
+   `.dialog-cancel` (text-only) instead of looking like a second flat link.
+   Users were missing the "Log in" / "Install" button on Microsoft auth
+   and pack-pick dialogs because both buttons rendered identically. */
 .dialog-accept {
-    -fx-text-fill: -monet-primary;
-    -fx-padding: 0.7em 0.8em;
+    -fx-background-color: -monet-primary;
+    -fx-text-fill: -monet-on-primary;
+    -fx-background-radius: 999;
+    -fx-padding: 0.7em 1.4em;
+    -fx-font-weight: bold;
+}
+
+.dialog-accept:hover {
+    -fx-background-color: derive(-monet-primary, -8%);
+}
+
+.dialog-accept:disabled {
+    -fx-background-color: -monet-surface-variant;
+    -fx-text-fill: -monet-on-surface-variant;
+    -fx-opacity: 0.6;
 }
 
 .dialog-cancel {

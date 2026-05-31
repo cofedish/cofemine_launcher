@@ -316,20 +316,12 @@ public final class CofeMinePane extends VBox {
         new CofeMinePackPickerDialog(client, this::installPanelPack).show();
     }
 
-    private void installPanelPack(CofeMinePanelPack panelPack) {
-        Profile profile = Profiles.getSelectedProfile();
-        if (profile == null) {
-            Controllers.dialog(i18n("cofemine.modpack.no_profile"),
-                    i18n("message.error"), MessageDialogPane.MessageType.ERROR);
-            return;
-        }
-
+    private void installPanelPack(CofeMinePanelPack panelPack, Path installDir) {
+        // One profile per pack so each lives in its own directory tree
+        // (mods/, configs/, saves/, options.txt) — the install location
+        // the user just picked becomes the profile's gameDir.
+        Profile profile = ensurePackProfile(panelPack, installDir);
         String versionName = makeUniqueVersionName(profile, panelPack.getDisplayName());
-        // We capture the instance dir AFTER install: ModrinthInstallTask
-        // marks the new version as a modpack, which flips
-        // HMCLGameRepository.getGameDirectoryType() from ROOT_FOLDER to
-        // VERSION_FOLDER, so the run directory only resolves correctly
-        // post-install.
 
         busy.set(true);
         Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
@@ -373,10 +365,48 @@ public final class CofeMinePane extends VBox {
         executor.start();
     }
 
+    private Profile ensurePackProfile(CofeMinePanelPack panelPack, Path installDir) {
+        String profileName = profileNameFor(panelPack);
+        Profile existing = Profiles.getProfiles().stream()
+                .filter(p -> profileName.equals(p.getName()))
+                .findFirst()
+                .orElse(null);
+        if (existing != null) {
+            existing.setGameDir(installDir);
+            Profiles.setSelectedProfile(existing);
+            return existing;
+        }
+        try {
+            java.nio.file.Files.createDirectories(installDir);
+        } catch (Exception e) {
+            LOG.warning("Failed to create pack directory " + installDir, e);
+        }
+        Profile profile = new Profile(profileName, installDir);
+        profile.setUseRelativePath(false);
+        Profiles.getProfiles().add(profile);
+        Profiles.setSelectedProfile(profile);
+        return profile;
+    }
+
+    private static String profileNameFor(CofeMinePanelPack panelPack) {
+        String base = panelPack.getDisplayName();
+        if (StringUtils.isBlank(base)) base = panelPack.getId();
+        if (StringUtils.isBlank(base)) base = "CofeMine";
+        return "CofeMine: " + base.trim();
+    }
+
     private void updatePack(CofeMineInstalledPack pack) {
         if (busy.get()) return;
-        Profile profile = Profiles.getSelectedProfile();
-        if (profile == null) return;
+        // Each pack has its own profile (named "CofeMine: <displayName>");
+        // look it up so the update runs in that profile's repo regardless of
+        // which profile the user has currently selected.
+        Profile profile = findProfileForPack(pack);
+        if (profile == null) {
+            Controllers.dialog(i18n("cofemine.modpack.no_profile"),
+                    i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+            return;
+        }
+        Profiles.setSelectedProfile(profile);
 
         busy.set(true);
         Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
@@ -415,19 +445,38 @@ public final class CofeMinePane extends VBox {
                 null);
     }
 
+    private Profile findProfileForPack(CofeMineInstalledPack pack) {
+        // Each pack ships with its own profile named "CofeMine: <displayName>"
+        // (see installPanelPack -> ensurePackProfile). Find it by name so
+        // we never accidentally touch an unrelated profile.
+        String wanted = "CofeMine: " + (pack.getDisplayName() == null ? "" : pack.getDisplayName().trim());
+        for (Profile p : Profiles.getProfiles()) {
+            if (wanted.equals(p.getName())) {
+                return p;
+            }
+        }
+        return null;
+    }
+
     private void performDelete(CofeMineInstalledPack pack) {
-        // Modpack versions live under <profile>/versions/<name>/ in
-        // VERSION_FOLDER mode, so removing the version from disk is enough
-        // — HMCL deletes the version directory tree (including mods,
-        // configs, saves, etc.) on its own. We do *not* delete the stored
-        // instancePath blindly: in shared-root setups that path could be
-        // the profile's gameDir, and wiping it would nuke unrelated data.
-        Profile profile = Profiles.getSelectedProfile();
+        // Each pack owns its profile + gameDir, so deleting the pack means
+        // wiping its profile entirely: remove the version, remove the
+        // profile entry, then wipe the gameDir on disk.
+        Profile profile = findProfileForPack(pack);
         if (profile != null) {
             try {
                 profile.getRepository().removeVersionFromDisk(pack.getVersionName());
             } catch (Exception e) {
                 LOG.warning("Failed to remove version " + pack.getVersionName(), e);
+            }
+            Path gameDir = profile.getGameDir();
+            Profiles.getProfiles().remove(profile);
+            if (gameDir != null && java.nio.file.Files.isDirectory(gameDir)) {
+                try {
+                    FileUtils.deleteDirectory(gameDir);
+                } catch (Exception e) {
+                    LOG.warning("Failed to delete pack directory " + gameDir, e);
+                }
             }
         }
         config().getCofeminePacks().removeIf(p -> java.util.Objects.equals(p.getId(), pack.getId()));
