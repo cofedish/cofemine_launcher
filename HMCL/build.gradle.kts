@@ -446,6 +446,7 @@ fun Exec.configureJpackage(
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
         args += listOf("--java-options", "-Djavafx.animation.framerate=240")
+        args += listOf("--java-options", "-Djavafx.animation.pulse=240")
         args += extraArgs
 
         commandLine(args)
@@ -588,6 +589,7 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         // 180 on 180Hz. Earlier `fullspeed=true` disabled pulse
         // throttling entirely, which raced vsync and stuttered.
         args += listOf("--java-options", "-Djavafx.animation.framerate=240")
+        args += listOf("--java-options", "-Djavafx.animation.pulse=240")
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
