@@ -429,18 +429,23 @@ fun Exec.configureJpackage(
         // aren't affected.
         args += listOf("--java-options", "-Dhmcl.self_integrity_check.disable=true")
         // Force JavaFX to pick a GPU pipeline (Direct3D on Windows, Metal
-        // on macOS, GL on Linux). Without this Prism sometimes falls back
-        // to the software rasterizer even on modern GPUs, which shows up
-        // as a ~30fps cap when dragging the launcher window on high-
-        // refresh-rate monitors.
+        // on macOS, GL on Linux). Without this Prism silently falls back
+        // to the software rasterizer on some setups, which shows up as a
+        // ~30fps cap during window drag.
         //
-        // We intentionally do NOT set `javafx.animation.fullspeed=true`:
-        // combined with vsync it produced stutter on some setups (uncapped
-        // pulse races vsync and yields irregular frame pacing). A steady
-        // 60Hz pulse synchronised to monitor vblank looks smoother than an
-        // uncapped pulse fighting the compositor.
+        // Pulse pacing: JavaFX caps the animation pulse at 60Hz by
+        // default, which looks choppy on 120/144/180/240 Hz monitors
+        // because the present rate doesn't track the refresh rate.
+        // `javafx.animation.framerate=240` raises that cap well above any
+        // common monitor, and `prism.vsync=true` syncs the present to
+        // monitor vblank so each refresh sees exactly one fresh frame —
+        // 144 fps on 144 Hz, 180 fps on 180 Hz, 60 fps on 60 Hz, all with
+        // steady frame pacing. (Don't use `javafx.animation.fullspeed`:
+        // it disables pulse throttling entirely, which races vsync and
+        // produces visibly worse jitter than the 60-Hz cap it bypasses.)
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
+        args += listOf("--java-options", "-Djavafx.animation.framerate=240")
         args += extraArgs
 
         commandLine(args)
@@ -577,10 +582,12 @@ val packageWindowsAppImage by tasks.registering(Exec::class) {
         // the user's graphics stack.
         args += listOf("--java-options", "-Dprism.forceGPU=true")
         args += listOf("--java-options", "-Dprism.vsync=true")
-        // fullspeed=true was tried for higher-Hz monitors but caused
-        // stutter when combined with vsync — uncapped pulse + vsync race
-        // each other and frame pacing becomes uneven. Keep the default
-        // 60Hz pulse (vsync clamps to monitor refresh kratno).
+        // Pace JavaFX pulse at 240Hz (well above common monitor refresh
+        // rates) so vsync clamps to the actual refresh rate and the user
+        // sees one fresh frame per vblank — 60fps on 60Hz, 144 on 144Hz,
+        // 180 on 180Hz. Earlier `fullspeed=true` disabled pulse
+        // throttling entirely, which raced vsync and stuttered.
+        args += listOf("--java-options", "-Djavafx.animation.framerate=240")
 
         commandLine(args)
         logger.lifecycle("jpackage app-image: {}", args.joinToString(" "))
