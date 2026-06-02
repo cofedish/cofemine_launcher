@@ -58,13 +58,24 @@ public final class DownloadProviders {
         String bmclapiRoot = System.getProperty("hmcl.bmclapi.override", "https://bmclapi2.bangbang93.com");
         BMCLAPIDownloadProvider bmclapiRaw = new BMCLAPIDownloadProvider(bmclapiRoot);
 
+        // CofeMine panel mirror — proxies the same URL space as BMCLAPI
+        // through panel.cofemine.ru/mirror, so we reuse BMCLAPIDownloadProvider
+        // with a different root. Override available via system property for
+        // staging environments.
+        String cofemineMirrorRoot = System.getProperty(
+                "hmcl.cofemine.mirror.override",
+                "https://panel.cofemine.ru/mirror");
+        BMCLAPIDownloadProvider cofemineMirrorRaw = new BMCLAPIDownloadProvider(cofemineMirrorRoot);
+
         DownloadProvider mojang = new MojangDownloadProvider();
         DownloadProvider bmclapi = new AutoDownloadProvider(bmclapiRaw, mojang);
+        DownloadProvider cofemineMirror = new AutoDownloadProvider(cofemineMirrorRaw, mojang);
 
         DEFAULT_PROVIDER = mojang;
         DIRECT_PROVIDERS = Lang.mapOf(
                 pair("mojang", mojang),
-                pair("bmclapi", bmclapi)
+                pair("bmclapi", bmclapi),
+                pair("cofemine", cofemineMirror)
         );
 
         AUTO_PROVIDERS = Lang.mapOf(
@@ -73,7 +84,8 @@ public final class DownloadProviders {
                         List.of(mojang, bmclapiRaw),
                         List.of(bmclapiRaw, mojang)
                 ) : mojang),
-                pair("mirror", bmclapi)
+                pair("mirror", bmclapi),
+                pair("cofemine", cofemineMirror)
         );
 
         PROVIDER_WRAPPER = new DownloadProviderWrapper(DEFAULT_PROVIDER);
