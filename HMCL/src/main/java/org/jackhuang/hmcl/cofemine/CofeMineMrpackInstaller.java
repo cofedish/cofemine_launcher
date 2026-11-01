@@ -30,13 +30,21 @@ import org.jetbrains.annotations.Nullable;
 
 import kala.compress.archivers.zip.ZipArchiveReader;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 
@@ -51,6 +59,13 @@ import static org.jackhuang.hmcl.util.logging.Logger.LOG;
  * VERSION_FOLDER setting and drop the in-memory mark on success.
  */
 public final class CofeMineMrpackInstaller {
+
+    /**
+     * Pack folder whose files are installed only where the instance has no such file: defaults the player may change
+     * (shader on/off and choice in config/iris.properties, ...). A pack update never overwrites or deletes them.
+     * Format: docs/production/pack-publishing.md in the StoryForge repository.
+     */
+    public static final String DEFAULTS_DIR = "overrides-default/";
 
     private CofeMineMrpackInstaller() {
     }
@@ -119,9 +134,16 @@ public final class CofeMineMrpackInstaller {
             }
         });
 
+        Task<Void> defaults = Task.runAsync("CofeMine first-install defaults", Schedulers.io(), () -> {
+            for (Path installed : installDefaults(mrpackFileRef.get(), repository.getRunDirectory(versionName))) {
+                LOG.info("CofeMine pack: installed default " + installed);
+            }
+        });
+
         return prepare
                 .thenComposeAsync(download)
                 .thenComposeAsync(install)
+                .thenComposeAsync(defaults)
                 .thenComposeAsync(finalize)
                 .whenComplete(Schedulers.io(), ex -> {
                     Path workDir = workDirRef.get();
@@ -183,7 +205,7 @@ public final class CofeMineMrpackInstaller {
     }
 
     /** {@code files[].path} of the Modrinth manifest recorded for an installed version; empty if unknown. */
-    static List<String> manifestFiles(Path modpackConfiguration) {
+    public static List<String> manifestFiles(Path modpackConfiguration) {
         List<String> paths = new ArrayList<>();
         if (!Files.isRegularFile(modpackConfiguration)) return paths;
         try {
@@ -201,7 +223,7 @@ public final class CofeMineMrpackInstaller {
     }
 
     /** Files listed by the previous release but not the current one, resolved strictly inside {@code runDir}. */
-    static List<Path> stalePaths(Path runDir, List<String> previous, List<String> current) {
+    public static List<Path> stalePaths(Path runDir, List<String> previous, List<String> current) {
         Path root = runDir.toAbsolutePath().normalize();
         Set<Path> keep = new HashSet<>();
         for (String p : current) keep.add(root.resolve(p).normalize());
@@ -212,5 +234,43 @@ public final class CofeMineMrpackInstaller {
             if (Files.isRegularFile(resolved)) stale.add(resolved);
         }
         return stale;
+    }
+
+    /**
+     * Copies every {@link #DEFAULTS_DIR} entry of the pack to the same relative path in {@code runDir} if, and only
+     * if, nothing exists there yet. Entries resolving outside {@code runDir} are ignored.
+     *
+     * @return the files written
+     */
+    public static List<Path> installDefaults(Path mrpack, Path runDir) throws IOException {
+        Path root = runDir.toAbsolutePath().normalize();
+        List<Path> installed = new ArrayList<>();
+        try (ZipFile zip = new ZipFile(mrpack.toFile(), StandardCharsets.UTF_8)) {
+            for (Enumeration<? extends ZipEntry> entries = zip.entries(); entries.hasMoreElements(); ) {
+                ZipEntry entry = entries.nextElement();
+                String name = entry.getName().replace('\\', '/');
+                if (entry.isDirectory() || !name.startsWith(DEFAULTS_DIR) || name.length() == DEFAULTS_DIR.length()) continue;
+                Path target = root.resolve(name.substring(DEFAULTS_DIR.length())).normalize();
+                if (!target.startsWith(root) || target.equals(root)) {
+                    LOG.warning("CofeMine pack: ignoring default outside the instance: " + name);
+                    continue;
+                }
+                if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) continue; // the player's file wins
+                Files.createDirectories(target.getParent());
+                Path part = Files.createTempFile(target.getParent(), ".cofemine-default", ".part");
+                try {
+                    try (InputStream in = zip.getInputStream(entry)) {
+                        Files.copy(in, part, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    Files.move(part, target); // no REPLACE_EXISTING: never clobbers a file that appeared meanwhile
+                    installed.add(target);
+                } catch (FileAlreadyExistsException e) {
+                    LOG.info("CofeMine pack: " + target + " appeared meanwhile, keeping it");
+                } finally {
+                    Files.deleteIfExists(part);
+                }
+            }
+        }
+        return installed;
     }
 }

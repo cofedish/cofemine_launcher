@@ -235,20 +235,27 @@ public class FileDownloadTask extends FetchTask<Void> {
                     handler.checkIntegrity(temp, file);
                 }
 
+                // Integrity check before the file reaches its destination: a mismatching download must never be
+                // left in place (callers such as ModrinthCompletionTask skip files that already exist, so it would
+                // otherwise survive every retry).
+                if (checksum != null) {
+                    String actualChecksum = HexFormat.of().formatHex(digest.digest());
+                    if (!checksum.equalsIgnoreCase(actualChecksum)) {
+                        try {
+                            Files.deleteIfExists(temp);
+                        } catch (IOException e) {
+                            LOG.warning("Failed to delete file: " + temp, e);
+                        }
+                        throw new ChecksumMismatchException(algorithm, checksum, actualChecksum);
+                    }
+                }
+
                 Files.createDirectories(file.toAbsolutePath().getParent());
 
                 try {
                     Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
                 } catch (Exception e) {
                     throw new IOException("Unable to move temp file from " + temp + " to " + file, e);
-                }
-
-                // Integrity check
-                if (checksum != null) {
-                    String actualChecksum = HexFormat.of().formatHex(digest.digest());
-                    if (!checksum.equalsIgnoreCase(actualChecksum)) {
-                        throw new ChecksumMismatchException(algorithm, checksum, actualChecksum);
-                    }
                 }
 
                 if (caching && algorithm != null) {
