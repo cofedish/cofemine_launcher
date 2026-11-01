@@ -46,16 +46,51 @@ public final class CofeMinePanelPack {
     @SerializedName("updatedAt")
     private @Nullable String updatedAt;
 
+    /** Publisher's build id ({@code <version>+<stamp>.<commit>}); tells two releases apart. */
+    @SerializedName("versionId")
+    private @Nullable String versionId;
+
+    /** sha512 of the .mrpack at {@link #mrpackUrl} (hex); set in signed release metadata. */
+    @SerializedName("sha512")
+    private @Nullable String sha512;
+
+    /** The channel's signed release metadata ({@link CofeMinePackTrust}); absent for unsigned sources. */
+    @SerializedName("signedMetadataUrl")
+    private @Nullable String signedMetadataUrl;
+
     public CofeMinePanelPack() {
     }
 
+    /** An index-less entry: only what an installed pack recorded (used for unsigned updates). */
+    public static CofeMinePanelPack unsigned(String id, String displayName, String mrpackUrl) {
+        CofeMinePanelPack pack = new CofeMinePanelPack();
+        pack.id = id;
+        pack.displayName = displayName;
+        pack.mrpackUrl = mrpackUrl;
+        return pack;
+    }
+
     public String getId() { return id; }
+
     public String getDisplayName() { return displayName; }
+
     public @Nullable String getVersionName() { return versionName; }
+
     public @Nullable String getMinecraft() { return minecraft; }
+
     public @Nullable String getLoader() { return loader; }
+
     public @Nullable String getLoaderVersion() { return loaderVersion; }
+
     public String getMrpackUrl() { return mrpackUrl; }
+
     public @Nullable String getMetadataUrl() { return metadataUrl; }
+
     public @Nullable String getUpdatedAt() { return updatedAt; }
+
+    public @Nullable String getVersionId() { return versionId; }
+
+    public @Nullable String getSha512() { return sha512; }
+
+    public @Nullable String getSignedMetadataUrl() { return signedMetadataUrl; }
 }

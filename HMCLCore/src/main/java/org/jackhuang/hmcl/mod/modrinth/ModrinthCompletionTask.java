@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -122,9 +123,10 @@ public class ModrinthCompletionTask extends Task<Void> {
             if (modsDirectory.equals(filePath.getParent()) && this.modManager.hasSimpleMod(FileUtils.getName(filePath)))
                 continue;
 
+            // The manifest pins each file by hash: a download that does not match it is not installed.
             var task = new FileDownloadTask(
                     file.getDownloads().stream().map(NetworkUtils::toURI).collect(Collectors.toList()),
-                    filePath);
+                    filePath, integrityCheckOf(file));
             task.setCacheRepository(dependency.getCacheRepository());
             task.setCaching(true);
             dependencies.add(task.withCounter("hmcl.modpack.download"));
@@ -149,5 +151,12 @@ public class ModrinthCompletionTask extends Task<Void> {
             throw new ModpackCompletionException(new FileNotFoundException());
         if (!allNameKnown.get() || !isDependenciesSucceeded())
             throw new ModpackCompletionException();
+    }
+
+    static FileDownloadTask.IntegrityCheck integrityCheckOf(ModrinthManifest.File file) {
+        Map<String, String> hashes = file.getHashes();
+        if (hashes == null) return null;
+        if (hashes.get("sha512") != null) return new FileDownloadTask.IntegrityCheck("SHA-512", hashes.get("sha512"));
+        return FileDownloadTask.IntegrityCheck.of("SHA-1", hashes.get("sha1"));
     }
 }

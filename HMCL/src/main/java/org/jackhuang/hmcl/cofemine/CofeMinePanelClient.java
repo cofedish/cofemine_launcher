@@ -18,9 +18,12 @@ import org.jackhuang.hmcl.util.io.HttpRequest;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.jackhuang.hmcl.util.logging.Logger.LOG;
@@ -85,6 +88,39 @@ public final class CofeMinePanelClient {
             LOG.warning("Failed to load CofeMine panel metadata from " + url, e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * GET the channel's signed release ({@code <token>.sig.json}), verify it against the pinned keys and return the
+     * release it describes. Throws unless the signature verifies, the release belongs to {@code expectedId}, and it
+     * pins its .mrpack by sha512 over https.
+     */
+    public static CofeMinePanelPack fetchSignedRelease(String signedMetadataUrl, String expectedId) throws IOException {
+        if (!CofeMinePackTrust.isHttps(signedMetadataUrl))
+            throw new IOException("signed metadata must come over https: " + signedMetadataUrl);
+        return parseSignedRelease(HttpRequest.GET(signedMetadataUrl).getString(), expectedId, CofeMinePackTrust.PINNED_KEYS);
+    }
+
+    static CofeMinePanelPack parseSignedRelease(String envelope, String expectedId, Map<String, String> keys) throws IOException {
+        byte[] payload;
+        try {
+            payload = CofeMinePackTrust.verifyEnvelope(envelope, keys);
+        } catch (GeneralSecurityException e) {
+            throw new IOException("pack signature rejected: " + e.getMessage(), e);
+        }
+        CofeMinePanelPack release;
+        try {
+            release = JsonUtils.fromNonNullJson(new String(payload, StandardCharsets.UTF_8), CofeMinePanelPack.class);
+        } catch (JsonParseException e) {
+            throw new IOException("signed pack metadata is not valid JSON", e);
+        }
+        if (expectedId == null || !expectedId.equals(release.getId()))
+            throw new IOException("signed metadata is for pack " + release.getId() + ", expected " + expectedId);
+        if (release.getSha512() == null || !release.getSha512().matches("[0-9a-f]{128}"))
+            throw new IOException("signed metadata has no sha512 for the pack");
+        if (!CofeMinePackTrust.isHttps(release.getMrpackUrl()))
+            throw new IOException("signed metadata points at a non-https pack: " + release.getMrpackUrl());
+        return release;
     }
 
     /**

@@ -54,6 +54,17 @@ public final class CofeMineInstalledPack {
     @SerializedName("updatedAt")
     private @Nullable String updatedAt;
 
+    /** Release installed ({@code versionId} of the publisher), compared on update. */
+    @SerializedName("packVersion")
+    private @Nullable String packVersion;
+
+    @SerializedName("signedMetadataUrl")
+    private @Nullable String signedMetadataUrl;
+
+    /** Installed from a verified signature: updates must be signed too (no silent downgrade to unsigned). */
+    @SerializedName("signed")
+    private boolean signed;
+
     public CofeMineInstalledPack() {
     }
 
@@ -76,35 +87,58 @@ public final class CofeMineInstalledPack {
     }
 
     public String getId() { return id; }
+
     public void setId(String id) { this.id = id; }
 
     public String getDisplayName() { return displayName; }
+
     public void setDisplayName(String displayName) { this.displayName = displayName; }
 
     public String getInstancePath() { return instancePath; }
+
     public void setInstancePath(String instancePath) { this.instancePath = instancePath; }
 
     public String getVersionName() { return versionName; }
+
     public void setVersionName(String versionName) { this.versionName = versionName; }
 
     public String getMrpackUrl() { return mrpackUrl; }
+
     public void setMrpackUrl(String mrpackUrl) { this.mrpackUrl = mrpackUrl; }
 
     public @Nullable String getMetadataUrl() { return metadataUrl; }
+
     public void setMetadataUrl(@Nullable String metadataUrl) { this.metadataUrl = metadataUrl; }
 
     public @Nullable String getMinecraft() { return minecraft; }
+
     public void setMinecraft(@Nullable String minecraft) { this.minecraft = minecraft; }
 
     public @Nullable String getLoader() { return loader; }
+
     public void setLoader(@Nullable String loader) { this.loader = loader; }
 
     public @Nullable String getLoaderVersion() { return loaderVersion; }
+
     public void setLoaderVersion(@Nullable String loaderVersion) { this.loaderVersion = loaderVersion; }
 
     public @Nullable String getInstalledAt() { return installedAt; }
+
     public void setInstalledAt(@Nullable String installedAt) { this.installedAt = installedAt; }
 
     public @Nullable String getUpdatedAt() { return updatedAt; }
+
     public void setUpdatedAt(@Nullable String updatedAt) { this.updatedAt = updatedAt; }
+
+    public @Nullable String getPackVersion() { return packVersion; }
+
+    public void setPackVersion(@Nullable String packVersion) { this.packVersion = packVersion; }
+
+    public @Nullable String getSignedMetadataUrl() { return signedMetadataUrl; }
+
+    public void setSignedMetadataUrl(@Nullable String signedMetadataUrl) { this.signedMetadataUrl = signedMetadataUrl; }
+
+    public boolean isSigned() { return signed; }
+
+    public void setSigned(boolean signed) { this.signed = signed; }
 }

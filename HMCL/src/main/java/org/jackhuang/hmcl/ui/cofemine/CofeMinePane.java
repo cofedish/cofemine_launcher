@@ -37,6 +37,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import org.jackhuang.hmcl.cofemine.CofeMineInstalledPack;
 import org.jackhuang.hmcl.cofemine.CofeMineMrpackInstaller;
+import org.jackhuang.hmcl.cofemine.CofeMinePackTrust;
 import org.jackhuang.hmcl.cofemine.CofeMinePanelClient;
 import org.jackhuang.hmcl.cofemine.CofeMinePanelPack;
 import org.jackhuang.hmcl.cofemine.CofeMineServerStatus;
@@ -44,6 +45,7 @@ import org.jackhuang.hmcl.cofemine.CofeMineServerStatusService;
 import org.jackhuang.hmcl.game.HMCLGameRepository;
 import org.jackhuang.hmcl.setting.Profile;
 import org.jackhuang.hmcl.setting.Profiles;
+import org.jackhuang.hmcl.task.Schedulers;
 import org.jackhuang.hmcl.task.Task;
 import org.jackhuang.hmcl.task.TaskExecutor;
 import org.jackhuang.hmcl.task.TaskListener;
@@ -56,13 +58,17 @@ import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.TaskCancellationAction;
 import org.jackhuang.hmcl.util.io.FileUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static org.jackhuang.hmcl.setting.ConfigHolder.config;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
@@ -256,7 +262,8 @@ public final class CofeMinePane extends VBox {
         String mc = pack.getMinecraft() != null ? pack.getMinecraft() : "?";
         String loader = pack.getLoader() != null ? pack.getLoader() : "vanilla";
         String version = pack.getLoaderVersion() != null ? " " + pack.getLoaderVersion() : "";
-        Label meta = new Label(i18n("cofemine.modpack.pick.meta", mc, loader + version));
+        String release = StringUtils.isNotBlank(pack.getPackVersion()) ? " · " + pack.getPackVersion() : "";
+        Label meta = new Label(i18n("cofemine.modpack.pick.meta", mc, loader + version) + release);
         meta.getStyleClass().add("cofemine-subtitle");
 
         JFXButton update = new JFXButton();
@@ -317,6 +324,62 @@ public final class CofeMinePane extends VBox {
     }
 
     private void installPanelPack(CofeMinePanelPack panelPack, Path installDir) {
+        if (busy.get()) return;
+        resolveRelease(panelPack.getId(), config().getCofeminePanelBaseUrl(), panelPack.getSignedMetadataUrl(), panelPack,
+                false, (release, signed) -> installRelease(panelPack, release, signed, installDir));
+    }
+
+    // ==== Release resolution: what may be installed ========================
+
+    private interface ReleaseAction {
+        void run(CofeMinePanelPack release, boolean signed);
+    }
+
+    /**
+     * Decides what gets downloaded. A source that publishes signed metadata must verify against the pinned key
+     * (CofeMinePackTrust), and the official source must always do so. Only a third-party source without a signature
+     * falls back to its unsigned entry, and only after the user agrees.
+     *
+     * @param sourceUrl    the panel the index came from; "official" is decided by it, not by the URLs the index
+     *                     lists (a tampered index could point the pack elsewhere and drop the signature)
+     * @param mustBeSigned the installed pack was signed: an update may not quietly become unsigned
+     */
+    private void resolveRelease(String id, String sourceUrl, String signedMetadataUrl, CofeMinePanelPack unsigned,
+                                boolean mustBeSigned, ReleaseAction then) {
+        if (StringUtils.isNotBlank(signedMetadataUrl)) {
+            busy.set(true);
+            CompletableFuture.supplyAsync(() -> {
+                try {
+                    return CofeMinePanelClient.fetchSignedRelease(signedMetadataUrl, id);
+                } catch (IOException e) {
+                    throw new CompletionException(e);
+                }
+            }, Schedulers.io()).whenCompleteAsync((release, ex) -> {
+                busy.set(false);
+                if (ex != null) {
+                    Throwable cause = ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
+                    LOG.warning("CofeMine pack " + id + " rejected", cause);
+                    Controllers.dialog(i18n("cofemine.modpack.verify.failed", cause.getMessage()),
+                            i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+                } else {
+                    then.run(release, true);
+                }
+            }, Schedulers.javafx());
+            return;
+        }
+        if (mustBeSigned || CofeMinePackTrust.isOfficialSource(sourceUrl)
+                || CofeMinePackTrust.isOfficialSource(unsigned.getMrpackUrl())
+                || !CofeMinePackTrust.isHttps(unsigned.getMrpackUrl())) {
+            Controllers.dialog(i18n("cofemine.modpack.unsigned.refused"),
+                    i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+            return;
+        }
+        String host = CofeMinePackTrust.hostOf(unsigned.getMrpackUrl());
+        Controllers.confirm(i18n("cofemine.modpack.unsigned.confirm", host), i18n("message.warning"),
+                MessageDialogPane.MessageType.WARNING, () -> then.run(unsigned, false), null);
+    }
+
+    private void installRelease(CofeMinePanelPack panelPack, CofeMinePanelPack release, boolean signed, Path installDir) {
         // One profile per pack so each lives in its own directory tree
         // (mods/, configs/, saves/, options.txt) — the install location
         // the user just picked becomes the profile's gameDir.
@@ -325,7 +388,7 @@ public final class CofeMinePane extends VBox {
 
         busy.set(true);
         Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
-                profile, panelPack.getMrpackUrl(), versionName);
+                profile, release.getMrpackUrl(), versionName, signed ? release.getSha512() : null);
         TaskExecutor executor = task.executor();
 
         executor.addTaskListener(new TaskListener() {
@@ -346,8 +409,11 @@ public final class CofeMinePane extends VBox {
                                 panelPack.getLoader(),
                                 panelPack.getLoaderVersion(),
                                 Instant.now().toString(),
-                                panelPack.getUpdatedAt()
+                                release.getUpdatedAt()
                         );
+                        record.setPackVersion(releaseLabel(release));
+                        record.setSigned(signed);
+                        record.setSignedMetadataUrl(signed ? panelPack.getSignedMetadataUrl() : null);
                         replacePackInConfig(record);
                         profile.getRepository().refreshVersions();
                         profile.setSelectedVersion(versionName);
@@ -406,11 +472,51 @@ public final class CofeMinePane extends VBox {
                     i18n("message.error"), MessageDialogPane.MessageType.ERROR);
             return;
         }
+        String panelUrl = config().getCofeminePanelBaseUrl();
+        if (StringUtils.isNotBlank(pack.getSignedMetadataUrl())) {
+            checkAndUpdate(profile, pack, panelUrl, pack.getSignedMetadataUrl(), legacyEntry(pack));
+            return;
+        }
+        // Installed before the source signed its packs (or from an unsigned source): ask the index whether the
+        // channel is signed now, so the update is verified whenever it can be.
+        busy.set(true);
+        new CofeMinePanelClient(panelUrl).fetchIndexAsync().whenCompleteAsync((packs, ex) -> {
+            busy.set(false);
+            if (ex != null) {
+                Throwable cause = ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
+                Controllers.dialog(i18n("cofemine.modpack.pick.error", cause.getMessage()),
+                        i18n("message.error"), MessageDialogPane.MessageType.ERROR);
+                return;
+            }
+            CofeMinePanelPack entry = packs == null ? null
+                    : packs.stream().filter(p -> Objects.equals(p.getId(), pack.getId())).findFirst().orElse(null);
+            if (entry == null) LOG.warning("CofeMine pack " + pack.getId() + " not in the index of " + panelUrl);
+            checkAndUpdate(profile, pack, panelUrl, entry != null ? entry.getSignedMetadataUrl() : null,
+                    entry != null ? entry : legacyEntry(pack));
+        }, Schedulers.javafx());
+    }
+
+    private void checkAndUpdate(Profile profile, CofeMineInstalledPack pack, String sourceUrl, String signedMetadataUrl,
+                                CofeMinePanelPack unsigned) {
+        resolveRelease(pack.getId(), sourceUrl, signedMetadataUrl, unsigned, pack.isSigned(), (release, signed) -> {
+            String label = releaseLabel(release);
+            if (signed && label != null && label.equals(pack.getPackVersion())) {
+                Controllers.confirm(i18n("cofemine.modpack.up_to_date", label), i18n("cofemine.modpack.update"),
+                        MessageDialogPane.MessageType.INFO,
+                        () -> runUpdate(profile, pack, release, signed, signedMetadataUrl), null);
+            } else {
+                runUpdate(profile, pack, release, signed, signedMetadataUrl);
+            }
+        });
+    }
+
+    private void runUpdate(Profile profile, CofeMineInstalledPack pack, CofeMinePanelPack release, boolean signed,
+                           String signedMetadataUrl) {
         Profiles.setSelectedProfile(profile);
 
         busy.set(true);
-        Task<Void> task = CofeMineMrpackInstaller.createInstallTask(
-                profile, pack.getMrpackUrl(), pack.getVersionName());
+        Task<Void> task = CofeMineMrpackInstaller.createUpdateTask(
+                profile, release.getMrpackUrl(), pack.getVersionName(), signed ? release.getSha512() : null);
         TaskExecutor executor = task.executor();
 
         executor.addTaskListener(new TaskListener() {
@@ -420,6 +526,9 @@ public final class CofeMinePane extends VBox {
                     busy.set(false);
                     if (success) {
                         pack.setUpdatedAt(Instant.now().toString());
+                        pack.setPackVersion(releaseLabel(release));
+                        pack.setSigned(signed);
+                        pack.setSignedMetadataUrl(signed ? signedMetadataUrl : null);
                         // Mutating in place; trigger list update by replace.
                         replacePackInConfig(pack);
                         profile.getRepository().refreshVersions();
@@ -435,6 +544,16 @@ public final class CofeMinePane extends VBox {
                 i18n("cofemine.modpack.updating"),
                 TaskCancellationAction.NORMAL);
         executor.start();
+    }
+
+    /** What an unsigned update falls back to when the index has no entry: the URL recorded at install. */
+    private static CofeMinePanelPack legacyEntry(CofeMineInstalledPack pack) {
+        return CofeMinePanelPack.unsigned(pack.getId(), pack.getDisplayName(), pack.getMrpackUrl());
+    }
+
+    private static String releaseLabel(CofeMinePanelPack release) {
+        if (StringUtils.isNotBlank(release.getVersionId())) return release.getVersionId();
+        return release.getVersionName();
     }
 
     private void deletePack(CofeMineInstalledPack pack) {
@@ -479,7 +598,7 @@ public final class CofeMinePane extends VBox {
                 }
             }
         }
-        config().getCofeminePacks().removeIf(p -> java.util.Objects.equals(p.getId(), pack.getId()));
+        config().getCofeminePacks().removeIf(p -> Objects.equals(p.getId(), pack.getId()));
     }
 
     private void replacePackInConfig(CofeMineInstalledPack record) {
