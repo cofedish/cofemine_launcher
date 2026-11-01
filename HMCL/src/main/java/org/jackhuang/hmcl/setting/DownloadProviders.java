@@ -78,8 +78,11 @@ public final class DownloadProviders {
                 pair("cofemine", cofemineMirror)
         );
 
+        // "balanced" is the default source. Outside mainland China it is the CofeMine mirror (with the official
+        // servers as fallback per file): maven.neoforged.net is unreachable from Russian networks, so the official
+        // default failed every NeoForge install with a connect timeout.
         AUTO_PROVIDERS = Lang.mapOf(
-                pair("balanced", LocaleUtils.IS_CHINA_MAINLAND ? bmclapi : mojang),
+                pair("balanced", LocaleUtils.IS_CHINA_MAINLAND ? bmclapi : cofemineMirror),
                 pair("official", LocaleUtils.IS_CHINA_MAINLAND ? new AutoDownloadProvider(
                         List.of(mojang, bmclapiRaw),
                         List.of(bmclapiRaw, mojang)
