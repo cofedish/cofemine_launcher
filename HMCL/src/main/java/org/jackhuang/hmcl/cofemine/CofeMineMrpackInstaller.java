@@ -67,6 +67,22 @@ public final class CofeMineMrpackInstaller {
      */
     public static final String DEFAULTS_DIR = "overrides-default/";
 
+    private static final Set<String> PLAYER_SETTINGS = Set.of(
+            "options.txt",
+            "config/iris.properties",
+            "config/iris-excluded.json",
+            "config/sodium-options.json",
+            "config/embeddium-options.json",
+            "config/oculus.properties",
+            "config/fbp/config.json",
+            "config/fzzy_config/keybinds.toml",
+            "config/punchy/triggerable-keybindings.json"
+    );
+
+    public static boolean isPlayerSettings(String path) {
+        return PLAYER_SETTINGS.contains(path) || path.startsWith("shaderpacks/") && path.endsWith(".txt");
+    }
+
     private CofeMineMrpackInstaller() {
     }
 
@@ -116,7 +132,8 @@ public final class CofeMineMrpackInstaller {
                 throw new IllegalStateException("Pack manifest is not a Modrinth manifest");
             }
 
-            return new ModrinthInstallTask(dm, file, modpack, manifest, versionName, null);
+            return new ModrinthInstallTask(dm, file, modpack, manifest, versionName, null,
+                    CofeMineMrpackInstaller::isPlayerSettings);
         });
 
         Task<Void> finalize = Task.runAsync("CofeMine .mrpack finalize", Schedulers.io(), () -> {

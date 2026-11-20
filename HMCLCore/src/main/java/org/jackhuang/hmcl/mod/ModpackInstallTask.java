@@ -35,6 +35,7 @@ public class ModpackInstallTask<T> extends Task<Void> {
     private final List<String> subDirectories;
     private final List<ModpackConfiguration.FileInformation> overrides;
     private final Predicate<String> callback;
+    private final Predicate<String> preserveExisting;
 
     /// Constructor
     ///
@@ -45,6 +46,13 @@ public class ModpackInstallTask<T> extends Task<Void> {
     /// @param callback         test whether the file (given full path) in zip file should be unpacked or not
     /// @param oldConfiguration old modpack information if upgrade
     public ModpackInstallTask(Path modpackFile, Path dest, Charset charset, List<String> subDirectories, Predicate<String> callback, ModpackConfiguration<T> oldConfiguration) {
+        this(modpackFile, dest, charset, subDirectories, callback, oldConfiguration, path -> false);
+    }
+
+    public ModpackInstallTask(Path modpackFile, Path dest, Charset charset, List<String> subDirectories,
+                              Predicate<String> callback, ModpackConfiguration<T> oldConfiguration,
+                              Predicate<String> preserveExisting) {
+        this.preserveExisting = preserveExisting;
         this.modpackFile = modpackFile;
         this.dest = dest;
         this.charset = charset;
@@ -73,10 +81,12 @@ public class ModpackInstallTask<T> extends Task<Void> {
                     .setTerminateIfSubDirectoryNotExists()
                     .setReplaceExistentFile(true)
                     .setEncoding(charset)
-                    .setFilter((destPath, isDirectory, zipEntry, entryPath) -> {
+                    .setFilter((zipEntry, isDirectory, destPath, entryPath) -> {
                         if (isDirectory) return true;
                         if (!callback.test(entryPath)) return false;
                         entries.add(entryPath);
+                        if (preserveExisting.test(entryPath) && Files.exists(destPath))
+                            return false;
 
                         if (!files.containsKey(entryPath)) {
                             // If old modpack does not have this entry, add this entry or override the file that user added.
@@ -97,7 +107,7 @@ public class ModpackInstallTask<T> extends Task<Void> {
         // If old modpack have this entry, and new modpack deleted it. Delete this file.
         for (ModpackConfiguration.FileInformation file : overrides) {
             Path original = dest.resolve(file.getPath());
-            if (Files.exists(original) && !entries.contains(file.getPath()))
+            if (!preserveExisting.test(file.getPath()) && Files.exists(original) && !entries.contains(file.getPath()))
                 Files.deleteIfExists(original);
         }
     }
